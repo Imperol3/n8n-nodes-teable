@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-teable-io",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "n8n community node for Teable.io — full CRUD, dynamic dropdowns, bulk operations, and upsert for your Teable tables and CRM.",
   "keywords": [
     "n8n-community-node-package",
@@ -28,7 +28,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json && npm run copy:icons",
-    "copy:icons": "copyfiles -u 2 \"nodes/**/*.{png,svg}\" dist/",
+    "copy:icons": "copyfiles -u 0 \"nodes/**/*.{png,svg}\" dist/",
     "dev": "tsc -p tsconfig.json -w",
     "format": "prettier nodes credentials --write",
     "lint": "eslint nodes credentials --ext .ts",
