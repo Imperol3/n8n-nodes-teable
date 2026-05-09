@@ -14,13 +14,13 @@ Replace clunky HTTP nodes with a proper Teable integration: dynamic dropdowns, f
 In your n8n instance go to **Settings → Community Nodes → Install** and enter:
 
 ```
-@imperol3/n8n-nodes-teable
+n8n-nodes-teable-io
 ```
 
 Or install via npm (self-hosted n8n):
 
 ```bash
-npm install @imperol3/n8n-nodes-teable
+npm install n8n-nodes-teable-io
 ```
 
 ---
