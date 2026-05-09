@@ -28,8 +28,23 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Authenticate with npm
-        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+      - name: Check token is set
+        run: |
+          if [ -z "$NPM_TOKEN" ]; then
+            echo "ERROR: NPM_TOKEN secret is empty or not set"
+            exit 1
+          else
+            echo "NPM_TOKEN is set (length: ${#NPM_TOKEN})"
+          fi
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish with provenance
-        run: npm publish --access public --provenance
+      - name: Authenticate with npm
+        run: npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish
+        run: npm publish --access public
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
