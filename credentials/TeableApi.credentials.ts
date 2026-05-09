@@ -43,7 +43,7 @@ export class TeableApi implements ICredentialType {
 	test: ICredentialTestRequest = {
 		request: {
 			baseURL: '={{$credentials.baseUrl}}/api',
-			url: '/space',
+			url: '/user/me',
 		},
 	};
 }
