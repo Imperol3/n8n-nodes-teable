@@ -1,5 +1,5 @@
 {
-  "name": "n8n-nodes-teable",
+  "name": "@imperol3/n8n-nodes-teable",
   "version": "0.1.0",
   "description": "n8n community node for Teable.io — full CRUD, dynamic dropdowns, bulk operations, and upsert for your Teable tables and CRM.",
   "keywords": [
