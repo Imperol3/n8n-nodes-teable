@@ -74,7 +74,7 @@ export class Teable implements INodeType {
 			): Promise<INodeCredentialTestResult> {
 				const credentials = credential.data as IDataObject;
 				const baseUrl = (credentials.baseUrl as string).replace(/\/$/, '');
-				const apiToken = credentials.apiToken as string;
+				const apiToken = (credentials.apiToken as string).replace(/^Bearer\s+/i, '');
 
 				try {
 					await this.helpers.request({
@@ -86,7 +86,8 @@ export class Teable implements INodeType {
 					return { status: 'OK', message: 'Connection successful' };
 				} catch (error: any) {
 					// 403 means the token is valid but scope-restricted — still authenticated
-					if (error.statusCode === 403) {
+					const statusCode = error.statusCode ?? error.response?.statusCode ?? error.response?.status;
+					if (statusCode === 403) {
 						return { status: 'OK', message: 'Connection successful' };
 					}
 					return {

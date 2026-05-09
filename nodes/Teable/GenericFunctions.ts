@@ -20,12 +20,13 @@ export async function teableApiRequest(
 ): Promise<any> {
 	const credentials = await this.getCredentials('teableApi');
 	const baseUrl = (credentials.baseUrl as string).replace(/\/$/, '');
+	const apiToken = (credentials.apiToken as string).replace(/^Bearer\s+/i, '');
 
 	const options: IRequestOptions = {
 		method,
 		uri: `${baseUrl}/api${endpoint}`,
 		headers: {
-			Authorization: `Bearer ${credentials.apiToken}`,
+			Authorization: `Bearer ${apiToken}`,
 			'Content-Type': 'application/json',
 			Accept: 'application/json',
 		},

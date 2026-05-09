@@ -17,8 +17,9 @@ export class TeableApi implements ICredentialType {
 			typeOptions: { password: true },
 			default: '',
 			required: true,
+			placeholder: 'teable_accv...',
 			description:
-				'Your Teable personal access token. Generate one in your Teable account settings.',
+				'Your Teable personal access token. Generate one in your Teable account settings. Enter the token only — do NOT include the "Bearer " prefix.',
 		},
 		{
 			displayName: 'Base URL',
