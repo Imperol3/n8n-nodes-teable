@@ -2,10 +2,13 @@ import {
 	IExecuteFunctions,
 	IDataObject,
 	ILoadOptionsFunctions,
+	INodeCredentialTestResult,
 	INodeExecutionData,
 	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
+	ICredentialTestFunctions,
+	ICredentialsDecrypted,
 	NodeOperationError,
 } from 'n8n-workflow';
 
@@ -34,7 +37,7 @@ export class Teable implements INodeType {
 		defaults: { name: 'Teable' },
 		inputs: ['main'],
 		outputs: ['main'],
-		credentials: [{ name: 'teableApi', required: true }],
+		credentials: [{ name: 'teableApi', required: true, testedBy: 'teableApiCredentialTest' }],
 		properties: [
 			// ── Resource selector ─────────────────────────────────
 			{
@@ -64,6 +67,36 @@ export class Teable implements INodeType {
 	// loadOptions — power Space → Base → Table dropdowns elsewhere
 	// ─────────────────────────────────────────────────────────────
 	methods = {
+		credentialTest: {
+			async teableApiCredentialTest(
+				this: ICredentialTestFunctions,
+				credential: ICredentialsDecrypted,
+			): Promise<INodeCredentialTestResult> {
+				const credentials = credential.data as IDataObject;
+				const baseUrl = (credentials.baseUrl as string).replace(/\/$/, '');
+				const apiToken = credentials.apiToken as string;
+
+				try {
+					await this.helpers.request({
+						method: 'GET',
+						url: `${baseUrl}/api/space`,
+						headers: { Authorization: `Bearer ${apiToken}` },
+						json: true,
+					});
+					return { status: 'OK', message: 'Connection successful' };
+				} catch (error: any) {
+					// 403 means the token is valid but scope-restricted — still authenticated
+					if (error.statusCode === 403) {
+						return { status: 'OK', message: 'Connection successful' };
+					}
+					return {
+						status: 'Error',
+						message: error.message ?? 'Could not connect. Check your API token and Base URL.',
+					};
+				}
+			},
+		},
+
 		loadOptions: {
 			async getSpaces(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const spaces = await teableApiRequest.call(this, 'GET', '/space');
