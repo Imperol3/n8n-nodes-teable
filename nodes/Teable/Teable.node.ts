@@ -29,7 +29,7 @@ export class Teable implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Teable',
 		name: 'teable',
-		// icon: 'file:teable.svg',   // uncomment once you add an SVG icon
+		icon: 'file:teable.png',
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
