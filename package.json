@@ -13,17 +13,17 @@
     "postgres"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/YOUR_GITHUB_USERNAME/n8n-nodes-teable#readme",
+  "homepage": "https://github.com/imperol3/n8n-nodes-teable#readme",
   "author": {
     "name": "Kimotho",
     "email": "phoenixconsultants46@gmail.com"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/YOUR_GITHUB_USERNAME/n8n-nodes-teable.git"
+    "url": "git+https://github.com/imperol3/n8n-nodes-teable.git"
   },
   "bugs": {
-    "url": "https://github.com/YOUR_GITHUB_USERNAME/n8n-nodes-teable/issues"
+    "url": "https://github.com/imperol3/n8n-nodes-teable/issues"
   },
   "main": "index.js",
   "scripts": {
@@ -53,10 +53,11 @@
     "@typescript-eslint/parser": "^5.29.0",
     "copyfiles": "^2.4.1",
     "eslint-plugin-n8n-nodes-base": "^1.11.0",
+    "n8n-workflow": "^2.16.0",
     "prettier": "^2.7.1",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "n8n-workflow": "^2.16.0"
+    "n8n-workflow": "*"
   }
 }
