@@ -297,9 +297,12 @@ export class Teable implements INodeType {
 					else if (operation === 'createMany') {
 						const recordsRaw = this.getNodeParameter('recordsJson', i) as string | IDataObject[];
 						const additionalOptions = this.getNodeParameter('additionalOptions', i, {}) as IDataObject;
-						const records = (
-							typeof recordsRaw === 'string' ? JSON.parse(recordsRaw) : recordsRaw
-						) as IDataObject[];
+						let records: IDataObject[];
+						try {
+							records = (typeof recordsRaw === 'string' ? JSON.parse(recordsRaw) : recordsRaw) as IDataObject[];
+						} catch {
+							throw new NodeOperationError(this.getNode(), 'Records (JSON) is not valid JSON. Expected an array of record objects.', { itemIndex: i });
+						}
 
 						const allCreated: IDataObject[] = [];
 						for (let b = 0; b < records.length; b += BATCH_SIZE) {
@@ -346,9 +349,12 @@ export class Teable implements INodeType {
 					else if (operation === 'updateMany') {
 						const recordsRaw = this.getNodeParameter('recordsJson', i) as string | IDataObject[];
 						const additionalOptions = this.getNodeParameter('additionalOptions', i, {}) as IDataObject;
-						const records = (
-							typeof recordsRaw === 'string' ? JSON.parse(recordsRaw) : recordsRaw
-						) as IDataObject[];
+						let records: IDataObject[];
+						try {
+							records = (typeof recordsRaw === 'string' ? JSON.parse(recordsRaw) : recordsRaw) as IDataObject[];
+						} catch {
+							throw new NodeOperationError(this.getNode(), 'Records (JSON) is not valid JSON. Expected an array of record objects with "id" and "fields".', { itemIndex: i });
+						}
 
 						const allUpdated: IDataObject[] = [];
 						for (let b = 0; b < records.length; b += BATCH_SIZE) {

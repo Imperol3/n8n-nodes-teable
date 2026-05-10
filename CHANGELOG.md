@@ -4,6 +4,20 @@ All notable changes to `n8n-nodes-teable-io` are documented here.
 
 ---
 
+## [0.2.6] — 2026-05-10
+
+### Security
+
+- **Prototype pollution prevention** — `buildFieldsObject` now uses `Object.create(null)` as the base object and explicitly blocks reserved keys (`__proto__`, `constructor`, `prototype`) from being used as field names.
+- **URL credential leak fix** — `validateBaseUrl` no longer echoes the raw URL in error messages, preventing accidental exposure of embedded credentials in execution logs.
+
+### Fixed
+
+- **`Return All` memory cap** — `teableApiRequestAllItems` now stops at 100,000 records regardless of table size, preventing OOM on very large tables.
+- **`Create Many` / `Update Many` JSON errors** — invalid JSON in the Records field now throws a clean `NodeOperationError` with a readable message instead of a raw JS stack trace.
+
+---
+
 ## [0.2.5] — 2026-05-10
 
 ### Security

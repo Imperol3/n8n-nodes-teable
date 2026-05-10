@@ -21,7 +21,7 @@ export function validateBaseUrl(raw: string): string {
 	try {
 		parsed = new URL(raw);
 	} catch {
-		throw new Error(`Invalid Base URL: "${raw}". Must be a full URL (e.g. https://app.teable.io).`);
+		throw new Error('Invalid Base URL. Must be a full URL (e.g. https://app.teable.io).');
 	}
 	if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
 		throw new Error(`Invalid Base URL protocol "${parsed.protocol}". Only https:// is allowed.`);
@@ -89,9 +89,12 @@ export async function teableApiRequest(
 	}
 }
 
+// Hard cap on Return All to prevent OOM on very large tables.
+const MAX_RECORDS_RETURN_ALL = 100_000;
+
 /**
  * Fetch ALL records by automatically paginating with skip/take.
- * Teable's max per page is 1000.
+ * Teable's max per page is 1000. Capped at MAX_RECORDS_RETURN_ALL.
  */
 export async function teableApiRequestAllItems(
 	this: IExecuteFunctions | ILoadOptionsFunctions | IPollFunctions,
@@ -115,6 +118,8 @@ export async function teableApiRequestAllItems(
 
 		const records: any[] = response?.records ?? response ?? [];
 		results.push(...records);
+
+		if (results.length >= MAX_RECORDS_RETURN_ALL) break;
 
 		// Teable returns a `total` count — stop when we have everything
 		const total: number = response?.total ?? records.length;
@@ -141,6 +146,9 @@ export function parseJsonParameter(value: string | IDataObject): IDataObject {
 	return value;
 }
 
+// Keys that must never be used as field names — assigning to these pollutes the prototype chain.
+const PROTOTYPE_POISON_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 /**
  * Build a fields object from an n8n "fixedCollection" additionalFields value.
  */
@@ -151,8 +159,11 @@ export function buildFieldsObject(
 	const items = fieldsUi[fieldsKey] as Array<{ fieldName: string; fieldValue: string }> | undefined;
 	if (!items?.length) return {};
 
-	const fields: IDataObject = {};
+	const fields: IDataObject = Object.create(null);
 	for (const { fieldName, fieldValue } of items) {
+		if (PROTOTYPE_POISON_KEYS.has(fieldName)) {
+			throw new Error(`Field name "${fieldName}" is reserved and cannot be used.`);
+		}
 		try {
 			fields[fieldName] = JSON.parse(fieldValue);
 		} catch {
