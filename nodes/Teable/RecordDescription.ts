@@ -319,13 +319,14 @@ export const recordFields: INodeProperties[] = [
 
 	// ── UPSERT ────────────────────────────────────────────────────────────────
 	{
-		displayName: 'Unique Field Name',
+		displayName: 'Match Field',
 		name: 'upsertFieldName',
-		type: 'string',
+		type: 'options',
+		typeOptions: { loadOptionsMethod: 'getTableFieldNames', loadOptionsDependsOn: ['tableId'] },
 		required: true,
 		default: '',
 		displayOptions: { show: { resource: ['record'], operation: ['upsert'] } },
-		description: 'Field used to find an existing record. If found, it is updated; otherwise a new record is created.',
+		description: 'Field used to find an existing record by value. If a match is found it is updated; otherwise a new record is created.',
 	},
 	{
 		...fieldsUiProperty,

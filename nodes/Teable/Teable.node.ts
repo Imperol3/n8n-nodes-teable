@@ -395,7 +395,7 @@ export class Teable implements INodeType {
 							filterSet: [
 								{
 									fieldId: upsertFieldName,
-									operator: '=',
+									operator: 'is',
 									value: fieldValue,
 								},
 							],
@@ -451,18 +451,19 @@ export class Teable implements INodeType {
 						const returnAll = this.getNodeParameter('returnAllSearch', i) as boolean;
 						const limit = returnAll ? 1000 : (this.getNodeParameter('limitSearch', i) as number);
 
-						const qs: IDataObject = {
-							search: searchQuery,
-							take: limit,
-						};
-						if (searchFieldId) qs.searchFieldId = searchFieldId;
+						// Teable expects `search` as a JSON tuple: [value, fieldId|null, exactMatch]
+						const searchTuple: (string | boolean | null)[] = [
+							searchQuery,
+							searchFieldId || null,
+							false,
+						];
 
 						const response = await teableApiRequest.call(
 							this,
 							'GET',
 							`/table/${tableId}/record`,
 							{},
-							qs,
+							{ search: JSON.stringify(searchTuple), take: limit },
 						);
 						const records = (response as IDataObject)?.records as IDataObject[] ?? [];
 						returnData.push(...records.map((r) => ({ json: r })));

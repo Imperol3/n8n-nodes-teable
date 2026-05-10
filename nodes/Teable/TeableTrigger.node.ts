@@ -175,6 +175,17 @@ export class TeableTrigger implements INodeType {
 			const id = record.id as string;
 			const prevRecord = recordState[id] as IDataObject | undefined;
 
+			// Determine specific event: for the "createdOrUpdated" bucket, check whether
+			// this record's createdTime is newer than lastPollTime — if so it's "created",
+			// otherwise it's an "updated" record.
+			let actualEvent: string;
+			if (event === 'createdOrUpdated') {
+				const ct = record.createdTime as string | undefined;
+				actualEvent = ct && ct > lastPollTime! ? 'created' : 'updated';
+			} else {
+				actualEvent = event;
+			}
+
 			// Flatten fields onto top level for easy expression access.
 			const currentFields = flattenRecord(record);
 			const previousFields = prevRecord ? flattenRecord(prevRecord) : null;
@@ -185,7 +196,7 @@ export class TeableTrigger implements INodeType {
 			return {
 				json: {
 					id,
-					event,
+					event: actualEvent,
 					current: currentFields,
 					previous: previousFields,
 				} as IDataObject,
@@ -248,7 +259,17 @@ async function fetchNewRecords(
 	}
 
 	const field = event === 'updated' ? modifiedField : createdField;
-	return queryByTimeField.call(this, tableId, field, lastPollTime, limit);
+	const records = await queryByTimeField.call(this, tableId, field, lastPollTime, limit);
+
+	// For "updated" specifically: exclude records that were just created during this
+	// window (createdTime > lastPollTime). A brand-new record is not an update.
+	if (event === 'updated') {
+		return records.filter((r) => {
+			const ct = r.createdTime as string | undefined;
+			return ct ? ct <= lastPollTime : true;
+		});
+	}
+	return records;
 }
 
 async function queryByTimeField(
