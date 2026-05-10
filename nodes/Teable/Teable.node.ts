@@ -100,7 +100,8 @@ export class Teable implements INodeType {
 
 		loadOptions: {
 			async getSpaces(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const spaces = await teableApiRequest.call(this, 'GET', '/space');
+				const response = await teableApiRequest.call(this, 'GET', '/space');
+				const spaces = (response as IDataObject)?.spaces ?? response;
 				return (spaces as IDataObject[]).map((s) => ({
 					name: s.name as string,
 					value: s.id as string,
@@ -501,7 +502,8 @@ export class Teable implements INodeType {
 				else if (resource === 'space') {
 					// ── listSpaces ─────────────────────────────────
 					if (operation === 'listSpaces') {
-						const spaces = await teableApiRequest.call(this, 'GET', '/space');
+						const response = await teableApiRequest.call(this, 'GET', '/space');
+						const spaces = (response as IDataObject)?.spaces ?? response;
 						returnData.push(
 							...(spaces as IDataObject[]).map((s) => ({ json: s })),
 						);
