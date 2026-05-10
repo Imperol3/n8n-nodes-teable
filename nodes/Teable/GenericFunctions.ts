@@ -2,6 +2,7 @@ import {
 	IExecuteFunctions,
 	IHookFunctions,
 	ILoadOptionsFunctions,
+	IPollFunctions,
 	IDataObject,
 	NodeApiError,
 	IHttpRequestMethods,
@@ -12,7 +13,7 @@ import {
  * Make an authenticated request to the Teable API.
  */
 export async function teableApiRequest(
-	this: IExecuteFunctions | ILoadOptionsFunctions | IHookFunctions,
+	this: IExecuteFunctions | ILoadOptionsFunctions | IHookFunctions | IPollFunctions,
 	method: IHttpRequestMethods,
 	endpoint: string,
 	body: IDataObject = {},
@@ -59,7 +60,7 @@ export async function teableApiRequest(
  * Teable's max per page is 1000.
  */
 export async function teableApiRequestAllItems(
-	this: IExecuteFunctions | ILoadOptionsFunctions,
+	this: IExecuteFunctions | ILoadOptionsFunctions | IPollFunctions,
 	method: IHttpRequestMethods,
 	endpoint: string,
 	body: IDataObject = {},
