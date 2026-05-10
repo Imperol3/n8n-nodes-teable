@@ -37,14 +37,18 @@ const fieldsUiProperty: INodeProperties = {
 			displayName: 'Field',
 			values: [
 				{
-					displayName: 'Field Name',
+					displayName: 'Field',
 					name: 'fieldName',
-					type: 'string',
+					type: 'options',
+					typeOptions: {
+						loadOptionsMethod: 'getTableFieldNames',
+						loadOptionsDependsOn: ['tableId'],
+					},
 					default: '',
-					description: 'Exact field name as shown in Teable (case-sensitive).',
+					description: 'Select a field from the table. Switch to expression mode to type a field name manually.',
 				},
 				{
-					displayName: 'Field Value',
+					displayName: 'Value',
 					name: 'fieldValue',
 					type: 'string',
 					default: '',

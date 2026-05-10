@@ -152,6 +152,17 @@ export class Teable implements INodeType {
 					value: v.id as string,
 				}));
 			},
+
+			// Returns field NAMES as values — used for field pickers in create/update
+			async getTableFieldNames(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const tableId = this.getCurrentNodeParameter('tableId') as string;
+				if (!tableId) return [];
+				const fields = await teableApiRequest.call(this, 'GET', `/table/${tableId}/field`);
+				return (fields as IDataObject[]).map((f) => ({
+					name: `${f.name} (${f.type})`,
+					value: f.name as string,
+				}));
+			},
 		},
 	};
 

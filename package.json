@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-teable-io",
-  "version": "0.1.8",
+  "version": "0.2.0",
   "description": "n8n community node for Teable.io — full CRUD, dynamic dropdowns, bulk operations, and upsert for your Teable tables and CRM.",
   "keywords": [
     "n8n-community-node-package",
@@ -46,7 +46,8 @@
       "dist/credentials/TeableApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/Teable/Teable.node.js"
+      "dist/nodes/Teable/Teable.node.js",
+      "dist/nodes/Teable/TeableTrigger.node.js"
     ]
   },
   "devDependencies": {
