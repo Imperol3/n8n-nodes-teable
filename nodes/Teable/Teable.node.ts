@@ -42,6 +42,7 @@ export class Teable implements INodeType {
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
 		description: 'Read and write records, tables, and spaces in Teable.io',
 		defaults: { name: 'Teable' },
+		usableAsTool: true,
 		inputs: ['main'],
 		outputs: ['main'],
 		credentials: [{ name: 'teableApi', required: true, testedBy: 'teableApiCredentialTest' }],
