@@ -26,7 +26,7 @@ import { teableApiRequest } from './GenericFunctions';
  */
 export class TeableTool implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'Teable',
+		displayName: 'Teable Tool',
 		name: 'teableTool',
 		icon: 'file:teable.png',
 		group: ['transform'],
@@ -34,7 +34,7 @@ export class TeableTool implements INodeType {
 		description:
 			'Read and write Teable records from an AI Agent. Supports get, create, update, delete, search, and upsert.',
 		subtitle: '={{ $parameter["operation"] }}',
-		defaults: { name: 'Teable' },
+		defaults: { name: 'Teable Tool' },
 		// ── Tool interface ────────────────────────────────────────────────────────
 		usableAsTool: true,
 		inputs: ['main'],
