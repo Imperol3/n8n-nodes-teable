@@ -148,12 +148,19 @@ export class TeableTrigger implements INodeType {
 			return null;
 		}
 
-		const records = await fetchNewRecords.call(this, {
-			tableId,
-			event,
-			lastPollTime,
-			limit,
-		});
+		let records: IDataObject[];
+		try {
+			records = await fetchNewRecords.call(this, { tableId, event, lastPollTime, limit });
+		} catch (error: any) {
+			const statusCode = error?.statusCode ?? error?.response?.statusCode;
+			// Always advance the timestamp so the trigger never gets stuck on the same window.
+			staticData.lastPollTime = now;
+			if (statusCode && statusCode >= 500) {
+				// Transient server error (e.g. 504 timeout) — skip this cycle silently.
+				return null;
+			}
+			throw error;
+		}
 
 		staticData.lastPollTime = now;
 
@@ -206,38 +213,19 @@ async function queryByTimeField(
 	since: string,
 	limit: number,
 ): Promise<IDataObject[]> {
-	try {
-		// Attempt server-side time filter (most efficient)
-		const filter = {
-			conjunction: 'and',
-			filterSet: [{ fieldId, operator: '>', value: since }],
-		};
-		const response = await teableApiRequest.call(
-			this,
-			'GET',
-			`/table/${tableId}/record`,
-			{},
-			{
-				filter: JSON.stringify(filter),
-				take: limit,
-				orderBy: JSON.stringify([{ fieldId, order: 'asc' }]),
-			},
-		);
-		return (response as IDataObject)?.records as IDataObject[] ?? [];
-	} catch {
-		// Fallback: fetch recent records and filter in code.
-		// Used when Teable doesn't support date-range filters on system fields.
-		const response = await teableApiRequest.call(
-			this,
-			'GET',
-			`/table/${tableId}/record`,
-			{},
-			{ take: limit },
-		);
-		const all = (response as IDataObject)?.records as IDataObject[] ?? [];
-		return all.filter((r) => {
-			const ts = r[fieldId] as string | undefined ?? r.createdTime as string | undefined;
-			return ts ? ts > since : false;
-		});
-	}
+	// Fetch the most recent records and filter client-side.
+	// Server-side date filters on system fields (createdTime / lastModifiedTime)
+	// cause 504 timeouts on Teable, so we avoid them entirely.
+	const response = await teableApiRequest.call(
+		this,
+		'GET',
+		`/table/${tableId}/record`,
+		{},
+		{ take: limit },
+	);
+	const all = (response as IDataObject)?.records as IDataObject[] ?? [];
+	return all.filter((r) => {
+		const ts = (r[fieldId] as string | undefined) ?? (r.createdTime as string | undefined);
+		return ts ? ts > since : false;
+	});
 }
