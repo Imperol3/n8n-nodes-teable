@@ -42,8 +42,15 @@ export async function teableApiRequest(
 
 	try {
 		return await this.helpers.request(options);
-	} catch (error) {
-		throw new NodeApiError(this.getNode(), error as any);
+	} catch (error: any) {
+		const status = error?.statusCode ?? error?.response?.statusCode ?? '';
+		const body = error?.response?.body;
+		const bodyMsg =
+			typeof body === 'string'
+				? body.slice(0, 300)
+				: body?.message ?? (body ? JSON.stringify(body).slice(0, 300) : '');
+		const message = bodyMsg || error?.message || `Request failed${status ? ` (HTTP ${status})` : ''}`;
+		throw new NodeApiError(this.getNode(), error as any, { message: String(message) });
 	}
 }
 
