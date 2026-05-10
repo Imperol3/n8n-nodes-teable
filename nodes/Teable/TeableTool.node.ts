@@ -331,12 +331,12 @@ export class TeableTool implements INodeType {
 				// ── deleteRecord ─────────────────────────────────────────────────
 				else if (operation === 'deleteRecord') {
 					const recordId = this.getNodeParameter('recordId', i) as string;
+					// Teable DELETE /record requires recordIds as a repeated query param.
+					// We pass it via the endpoint directly to avoid the body-strip logic.
 					await teableApiRequest.call(
 						this,
 						'DELETE',
-						`/table/${tableId}/record`,
-						{},
-						{ recordIds: recordId },
+						`/table/${tableId}/record/${recordId}`,
 					);
 					returnData.push({ json: { success: true, deletedId: recordId } });
 				}
