@@ -4,7 +4,7 @@ An [n8n](https://n8n.io/) community node for [Teable.io](https://teable.io) — 
 
 Replace clunky HTTP nodes with a proper Teable integration: dynamic dropdowns, full CRUD, bulk operations, upsert, and auto-pagination — all in one node.
 
-[![npm version](https://img.shields.io/npm/v/n8n-nodes-teable.svg)](https://www.npmjs.com/package/n8n-nodes-teable)
+[![npm version](https://img.shields.io/npm/v/n8n-nodes-teable-io.svg)](https://www.npmjs.com/package/n8n-nodes-teable-io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -34,13 +34,15 @@ Create a **Teable API** credential with:
 | **API Token** | Your personal access token from Teable account settings |
 | **Base URL** | `https://app.teable.io` (default) or your self-hosted URL |
 
-After saving, click **Test** — n8n will verify the token against your spaces.
+After saving, click **Test** — n8n verifies the token works regardless of which permission scope it was issued with (space, base, table, or record level).
 
 ---
 
-## Resources & Operations
+## Nodes
 
-### Record (primary CRM resource)
+### Teable (action node)
+
+#### Record
 
 | Operation | Description |
 |---|---|
@@ -52,9 +54,9 @@ After saving, click **Test** — n8n will verify the token against your spaces.
 | **Update Many** | Bulk-update from a JSON array |
 | **Delete** | Delete a record by ID |
 | **Upsert** | Create or update based on a unique field match |
-| **Search** | Full-text search across all fields |
+| **Search** | Full-text or field-scoped search |
 
-### Table
+#### Table
 
 | Operation | Description |
 |---|---|
@@ -62,7 +64,7 @@ After saving, click **Test** — n8n will verify the token against your spaces.
 | **Get Schema** | Return all fields with their types and settings |
 | **Get Views** | List all views for a table |
 
-### Space / Base
+#### Space / Base
 
 | Operation | Description |
 |---|---|
@@ -71,15 +73,32 @@ After saving, click **Test** — n8n will verify the token against your spaces.
 
 ---
 
+### Teable Trigger (polling trigger)
+
+Polls for new or updated records on a schedule you set in the workflow settings.
+
+| Event | Description |
+|---|---|
+| **New Record** | Fires when a record is added |
+| **Record Updated** | Fires when an existing record is modified (excludes newly created records) |
+| **New or Updated Record** | Fires on any change |
+
+Each trigger output includes:
+- `event` — `"created"` or `"updated"`
+- `current` — current field values (flattened for easy expression access)
+- `previous` — previous field snapshot (null on first run)
+
+---
+
 ## Usage Tips
 
 **Finding IDs:** Run *Space → List Spaces* then *Space → List Bases* to get your IDs, or copy them from the Teable URL.
 
-**Return All:** Toggle on "Return All" in *Get All* to automatically paginate through every record (uses skip/take internally).
+**Return All:** Toggle on "Return All" in *Get All* to automatically paginate through every record (uses skip/take internally, max 1 000 per page).
 
-**Field Key Type:** Switch between *Field Name* (human-readable) and *Field ID* (fldXXX) per operation.
+**Field Key Type:** Switch between *Field Name* (human-readable) and *Field ID* (`fldXXX`) per operation.
 
-**Upsert:** Set the "Unique Field Name" to the field you want to match on — the node searches for a record with that value and updates it, or creates a new one.
+**Upsert:** Pick the match field from the dropdown — the node searches for a record with that value and updates it, or creates a new one if not found.
 
 **Bulk operations:** Pass a JSON array to *Create Many* / *Update Many*. Each update object needs `id` and `fields`:
 ```json
@@ -101,6 +120,26 @@ After saving, click **Test** — n8n will verify the token against your spaces.
 
 ---
 
+## Roadmap
+
+- **Webhook trigger** — real-time record events via Teable webhooks (no polling)
+- **Additional record operations** — bulk delete, record history, and more
+
+---
+
+## Security
+
+`0.2.5` introduced a security hardening pass:
+
+- SSRF protection on the `baseUrl` credential field
+- Path injection prevention on all resource ID parameters
+- Improved credential test endpoint (works with any token scope)
+- Error message hardening (no raw user input in logs)
+
+See [CHANGELOG.md](CHANGELOG.md) for full details.
+
+---
+
 ## Development
 
 ```bash
@@ -112,29 +151,24 @@ npm run build
 
 # Link to local n8n for testing
 npm link
-cd ~/.n8n
-mkdir -p nodes && cd nodes
-npm link n8n-nodes-teable
+cd ~/.n8n && mkdir -p nodes && cd nodes
+npm link n8n-nodes-teable-io
 
-# Start n8n — the Teable node will appear in the node picker
+# Start n8n — the Teable node appears in the node picker
 npx n8n start
 ```
 
 ---
 
-## Publishing to npm
+## Author
 
-```bash
-# Bump version
-npm version patch   # or minor / major
+Built and maintained by **ZACHARIA Kimotho (Imperol)**
 
-# Build & publish
-npm run build
-npm publish --access public
-```
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-ZACHARIA%20Kimotho-0077B5?logo=linkedin)](https://www.linkedin.com/in/zacharia-kimotho/)
+[![GitHub](https://img.shields.io/badge/GitHub-Imperol3-181717?logo=github)](https://github.com/Imperol3)
 
 ---
 
 ## License
 
-[MIT](LICENSE) © Kimotho / Phoenix Consultants
+[MIT](LICENSE) © ZACHARIA Kimotho (Imperol)
