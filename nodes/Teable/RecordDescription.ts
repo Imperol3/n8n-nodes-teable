@@ -1,9 +1,5 @@
 import { INodeProperties } from 'n8n-workflow';
 
-// ─────────────────────────────────────────────────────────────
-// Shared sub-properties used across multiple operations
-// ─────────────────────────────────────────────────────────────
-
 const fieldKeyTypeProperty: INodeProperties = {
 	displayName: 'Field Key Type',
 	name: 'fieldKeyType',
@@ -45,24 +41,19 @@ const fieldsUiProperty: INodeProperties = {
 					name: 'fieldName',
 					type: 'string',
 					default: '',
-					description: 'The name or ID of the field (depends on the Field Key Type setting).',
+					description: 'Exact field name as shown in Teable (case-sensitive).',
 				},
 				{
 					displayName: 'Field Value',
 					name: 'fieldValue',
 					type: 'string',
 					default: '',
-					description:
-						'The value to set. Use JSON for arrays/objects (e.g. ["tag1","tag2"] for multi-select).',
+					description: 'Value to set. JSON arrays/objects are auto-parsed (e.g. ["tag1","tag2"]).',
 				},
 			],
 		},
 	],
 };
-
-// ─────────────────────────────────────────────────────────────
-// Operations
-// ─────────────────────────────────────────────────────────────
 
 export const recordOperations: INodeProperties[] = [
 	{
@@ -72,88 +63,60 @@ export const recordOperations: INodeProperties[] = [
 		noDataExpression: true,
 		displayOptions: { show: { resource: ['record'] } },
 		options: [
-			{
-				name: 'Get All',
-				value: 'getAll',
-				description: 'List records in a table with optional filters, sorting, and pagination',
-				action: 'Get all records',
-			},
-			{
-				name: 'Get',
-				value: 'get',
-				description: 'Retrieve a single record by its ID',
-				action: 'Get a record',
-			},
-			{
-				name: 'Create',
-				value: 'create',
-				description: 'Create a new record in a table',
-				action: 'Create a record',
-			},
-			{
-				name: 'Create Many',
-				value: 'createMany',
-				description: 'Create multiple records in a single request (batched at 1 000)',
-				action: 'Create many records',
-			},
-			{
-				name: 'Update',
-				value: 'update',
-				description: 'Update fields on an existing record',
-				action: 'Update a record',
-			},
-			{
-				name: 'Update Many',
-				value: 'updateMany',
-				description: 'Update multiple records by their IDs in one request',
-				action: 'Update many records',
-			},
-			{
-				name: 'Delete',
-				value: 'delete',
-				description: 'Delete one or more records by ID',
-				action: 'Delete records',
-			},
-			{
-				name: 'Upsert',
-				value: 'upsert',
-				description: 'Create a record or update it if a matching value already exists in a field',
-				action: 'Upsert a record',
-			},
-			{
-				name: 'Search',
-				value: 'search',
-				description: 'Full-text search across all fields in a table',
-				action: 'Search records',
-			},
+			{ name: 'Get All', value: 'getAll', description: 'List records with optional filters and sorting', action: 'Get all records' },
+			{ name: 'Get', value: 'get', description: 'Retrieve a single record by its ID', action: 'Get a record' },
+			{ name: 'Create', value: 'create', description: 'Create a new record', action: 'Create a record' },
+			{ name: 'Create Many', value: 'createMany', description: 'Create multiple records (batched at 1,000)', action: 'Create many records' },
+			{ name: 'Update', value: 'update', description: 'Update fields on an existing record', action: 'Update a record' },
+			{ name: 'Update Many', value: 'updateMany', description: 'Update multiple records by ID', action: 'Update many records' },
+			{ name: 'Delete', value: 'delete', description: 'Delete a record', action: 'Delete a record' },
+			{ name: 'Upsert', value: 'upsert', description: 'Create or update a record based on a matching field', action: 'Upsert a record' },
+			{ name: 'Search', value: 'search', description: 'Search records by field value', action: 'Search records' },
 		],
 		default: 'getAll',
 	},
 ];
 
-// ─────────────────────────────────────────────────────────────
-// Fields
-// ─────────────────────────────────────────────────────────────
-
 export const recordFields: INodeProperties[] = [
-	// ── Shared: tableId ──────────────────────────────────────
+
+	// ── Space → Base → Table cascade (all record operations) ─────────────────
 	{
-		displayName: 'Table ID',
-		name: 'tableId',
-		type: 'string',
+		displayName: 'Space',
+		name: 'spaceId',
+		type: 'options',
+		typeOptions: { loadOptionsMethod: 'getSpaces' },
 		required: true,
 		default: '',
 		displayOptions: { show: { resource: ['record'] } },
-		description:
-			'The ID of the Teable table (tblXXXXXXXX). Find it in your table URL or use the Table → Get All operation.',
+		description: 'The Teable space.',
+	},
+	{
+		displayName: 'Base',
+		name: 'baseId',
+		type: 'options',
+		typeOptions: { loadOptionsMethod: 'getBases', loadOptionsDependsOn: ['spaceId'] },
+		required: true,
+		default: '',
+		displayOptions: { show: { resource: ['record'] } },
+		description: 'The base within the selected space.',
+	},
+	{
+		displayName: 'Table',
+		name: 'tableId',
+		type: 'options',
+		typeOptions: { loadOptionsMethod: 'getTables', loadOptionsDependsOn: ['baseId'] },
+		required: true,
+		default: '',
+		displayOptions: { show: { resource: ['record'] } },
+		description: 'The table to operate on.',
 	},
 
-	// ── GET ALL ───────────────────────────────────────────────
+	// ── GET ALL ───────────────────────────────────────────────────────────────
 	{
 		displayName: 'Return All',
 		name: 'returnAll',
 		type: 'boolean',
-		displayOptions: { show: { resource: ['record'], operation: ['getAll', 'search'] } },
+		displayOptions: { show: { resource: ['record'], operation: ['getAll'] } },
 		default: false,
 		description: 'Whether to return all results or only up to a given limit.',
 	},
@@ -162,11 +125,61 @@ export const recordFields: INodeProperties[] = [
 		name: 'limit',
 		type: 'number',
 		typeOptions: { minValue: 1, maxValue: 1000 },
-		displayOptions: {
-			show: { resource: ['record'], operation: ['getAll', 'search'], returnAll: [false] },
-		},
+		displayOptions: { show: { resource: ['record'], operation: ['getAll'], returnAll: [false] } },
 		default: 100,
 		description: 'Max number of results to return.',
+	},
+	{
+		displayName: 'Filter Conditions',
+		name: 'filterConditions',
+		type: 'fixedCollection',
+		typeOptions: { multipleValues: true },
+		placeholder: 'Add Condition',
+		default: {},
+		displayOptions: { show: { resource: ['record'], operation: ['getAll'] } },
+		description: 'Filter records by field values. All conditions are combined with AND. Overridden by Filter (JSON) if both are set.',
+		options: [
+			{
+				name: 'conditions',
+				displayName: 'Condition',
+				values: [
+					{
+						displayName: 'Field',
+						name: 'fieldId',
+						type: 'options',
+						typeOptions: { loadOptionsMethod: 'getTableFields', loadOptionsDependsOn: ['tableId'] },
+						default: '',
+						description: 'Field to filter on.',
+					},
+					{
+						displayName: 'Operator',
+						name: 'operator',
+						type: 'options',
+						options: [
+							{ name: 'Is', value: '=' },
+							{ name: 'Is Not', value: '!=' },
+							{ name: 'Contains', value: 'contains' },
+							{ name: 'Does Not Contain', value: 'doesNotContain' },
+							{ name: 'Is Empty', value: 'isEmpty' },
+							{ name: 'Is Not Empty', value: 'isNotEmpty' },
+							{ name: 'Greater Than', value: '>' },
+							{ name: 'Less Than', value: '<' },
+							{ name: 'Greater Than or Equal', value: '>=' },
+							{ name: 'Less Than or Equal', value: '<=' },
+						],
+						default: '=',
+						description: 'Comparison operator.',
+					},
+					{
+						displayName: 'Value',
+						name: 'value',
+						type: 'string',
+						default: '',
+						description: 'Value to compare against. Not used for isEmpty / isNotEmpty.',
+					},
+				],
+			},
+		],
 	},
 	{
 		displayName: 'Additional Options',
@@ -177,43 +190,40 @@ export const recordFields: INodeProperties[] = [
 		displayOptions: { show: { resource: ['record'], operation: ['getAll'] } },
 		options: [
 			{
-				displayName: 'View ID',
+				displayName: 'View',
 				name: 'viewId',
-				type: 'string',
+				type: 'options',
+				typeOptions: { loadOptionsMethod: 'getViews', loadOptionsDependsOn: ['tableId'] },
 				default: '',
-				description:
-					'Filter by a specific view. Leave empty to return all records regardless of view.',
+				description: 'Restrict results to a specific view.',
 			},
 			{
 				displayName: 'Filter (JSON)',
 				name: 'filter',
 				type: 'json',
 				default: '',
-				description:
-					'A Teable filter object as JSON. See https://help.teable.io/api-reference for the filter schema.',
+				description: 'Raw Teable filter object as JSON. Overrides Filter Conditions above when both are set.',
 			},
 			{
 				displayName: 'Order By (JSON)',
 				name: 'orderBy',
 				type: 'json',
 				default: '',
-				description:
-					'Sort rules as a JSON array, e.g. [{"fieldId":"fldXXX","order":"asc"}].',
+				description: 'Sort rules, e.g. [{"fieldId":"fldXXX","order":"asc"}].',
 			},
 			{
 				displayName: 'Selected Field IDs',
 				name: 'selectedFieldIds',
 				type: 'string',
 				default: '',
-				description:
-					'Comma-separated list of field IDs to include in the response. Leave empty to return all fields.',
+				description: 'Comma-separated field IDs to include. Leave empty for all fields.',
 			},
 			fieldKeyTypeProperty,
 			cellFormatProperty,
 		],
 	},
 
-	// ── GET (single) ─────────────────────────────────────────
+	// ── GET (single) ─────────────────────────────────────────────────────────
 	{
 		displayName: 'Record ID',
 		name: 'recordId',
@@ -233,7 +243,7 @@ export const recordFields: INodeProperties[] = [
 		options: [fieldKeyTypeProperty, cellFormatProperty],
 	},
 
-	// ── CREATE ────────────────────────────────────────────────
+	// ── CREATE ────────────────────────────────────────────────────────────────
 	{
 		...fieldsUiProperty,
 		displayOptions: { show: { resource: ['record'], operation: ['create'] } },
@@ -248,7 +258,7 @@ export const recordFields: INodeProperties[] = [
 		options: [fieldKeyTypeProperty],
 	},
 
-	// ── CREATE MANY ───────────────────────────────────────────
+	// ── CREATE MANY ───────────────────────────────────────────────────────────
 	{
 		displayName: 'Records (JSON)',
 		name: 'recordsJson',
@@ -256,8 +266,7 @@ export const recordFields: INodeProperties[] = [
 		required: true,
 		default: '[{"fields":{"Name":"Example"}}]',
 		displayOptions: { show: { resource: ['record'], operation: ['createMany'] } },
-		description:
-			'Array of record objects to create, e.g. [{"fields":{"Name":"Alice","Status":"Active"}}]. Automatically batched into chunks of 1 000.',
+		description: 'Array of record objects. Each must have a "fields" key. Batched at 1,000.',
 	},
 	{
 		displayName: 'Additional Options',
@@ -269,7 +278,7 @@ export const recordFields: INodeProperties[] = [
 		options: [fieldKeyTypeProperty],
 	},
 
-	// ── UPDATE ────────────────────────────────────────────────
+	// ── UPDATE ────────────────────────────────────────────────────────────────
 	{
 		...fieldsUiProperty,
 		displayOptions: { show: { resource: ['record'], operation: ['update'] } },
@@ -284,7 +293,7 @@ export const recordFields: INodeProperties[] = [
 		options: [fieldKeyTypeProperty],
 	},
 
-	// ── UPDATE MANY ───────────────────────────────────────────
+	// ── UPDATE MANY ───────────────────────────────────────────────────────────
 	{
 		displayName: 'Records (JSON)',
 		name: 'recordsJson',
@@ -292,8 +301,7 @@ export const recordFields: INodeProperties[] = [
 		required: true,
 		default: '[{"id":"recXXX","fields":{"Status":"Done"}}]',
 		displayOptions: { show: { resource: ['record'], operation: ['updateMany'] } },
-		description:
-			'Array of record objects to update. Each must include "id" and "fields", e.g. [{"id":"recXXX","fields":{"Status":"Done"}}].',
+		description: 'Array of record objects. Each must have "id" and "fields".',
 	},
 	{
 		displayName: 'Additional Options',
@@ -305,10 +313,7 @@ export const recordFields: INodeProperties[] = [
 		options: [fieldKeyTypeProperty],
 	},
 
-	// ── DELETE ────────────────────────────────────────────────
-	// recordId already declared above for get/update/delete
-
-	// ── UPSERT ────────────────────────────────────────────────
+	// ── UPSERT ────────────────────────────────────────────────────────────────
 	{
 		displayName: 'Unique Field Name',
 		name: 'upsertFieldName',
@@ -316,8 +321,7 @@ export const recordFields: INodeProperties[] = [
 		required: true,
 		default: '',
 		displayOptions: { show: { resource: ['record'], operation: ['upsert'] } },
-		description:
-			'The field used to check for an existing record. If a record with this field value exists it will be updated; otherwise a new record is created.',
+		description: 'Field used to find an existing record. If found, it is updated; otherwise a new record is created.',
 	},
 	{
 		...fieldsUiProperty,
@@ -333,7 +337,7 @@ export const recordFields: INodeProperties[] = [
 		options: [fieldKeyTypeProperty],
 	},
 
-	// ── SEARCH ────────────────────────────────────────────────
+	// ── SEARCH ────────────────────────────────────────────────────────────────
 	{
 		displayName: 'Search Query',
 		name: 'searchQuery',
@@ -341,15 +345,32 @@ export const recordFields: INodeProperties[] = [
 		required: true,
 		default: '',
 		displayOptions: { show: { resource: ['record'], operation: ['search'] } },
-		description: 'Text to search for across all fields in the table.',
+		description: 'Value to search for.',
 	},
 	{
-		displayName: 'Search Field ID',
+		displayName: 'Search Field',
 		name: 'searchFieldId',
-		type: 'string',
+		type: 'options',
+		typeOptions: { loadOptionsMethod: 'getTableFields', loadOptionsDependsOn: ['tableId'] },
 		default: '',
 		displayOptions: { show: { resource: ['record'], operation: ['search'] } },
-		description:
-			'Optionally restrict the search to a specific field ID. Leave empty to search all fields.',
+		description: 'Restrict the search to a specific field. Leave empty to search all fields.',
+	},
+	{
+		displayName: 'Return All',
+		name: 'returnAllSearch',
+		type: 'boolean',
+		displayOptions: { show: { resource: ['record'], operation: ['search'] } },
+		default: false,
+		description: 'Whether to return all matching results or only up to a limit.',
+	},
+	{
+		displayName: 'Limit',
+		name: 'limitSearch',
+		type: 'number',
+		typeOptions: { minValue: 1, maxValue: 1000 },
+		displayOptions: { show: { resource: ['record'], operation: ['search'], returnAllSearch: [false] } },
+		default: 100,
+		description: 'Max number of results to return.',
 	},
 ];

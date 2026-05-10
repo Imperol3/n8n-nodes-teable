@@ -8,52 +8,47 @@ export const tableOperations: INodeProperties[] = [
 		noDataExpression: true,
 		displayOptions: { show: { resource: ['table'] } },
 		options: [
-			{
-				name: 'Get All',
-				value: 'getAll',
-				description: 'List all tables within a base',
-				action: 'Get all tables',
-			},
-			{
-				name: 'Get Schema',
-				value: 'getSchema',
-				description: 'Return the fields (columns) and their types for a table',
-				action: 'Get table schema',
-			},
-			{
-				name: 'Get Views',
-				value: 'getViews',
-				description: 'List all views defined for a table',
-				action: 'Get table views',
-			},
+			{ name: 'Get All', value: 'getAll', description: 'List all tables within a base', action: 'Get all tables' },
+			{ name: 'Get Schema', value: 'getSchema', description: 'Return fields and their types for a table', action: 'Get table schema' },
+			{ name: 'Get Views', value: 'getViews', description: 'List all views for a table', action: 'Get table views' },
 		],
 		default: 'getAll',
 	},
 ];
 
 export const tableFields: INodeProperties[] = [
-	// ── GET ALL ───────────────────────────────────────────────
+
+	// ── Space → Base cascade (all table operations) ───────────────────────────
 	{
-		displayName: 'Base ID',
-		name: 'baseId',
-		type: 'string',
+		displayName: 'Space',
+		name: 'spaceId',
+		type: 'options',
+		typeOptions: { loadOptionsMethod: 'getSpaces' },
 		required: true,
 		default: '',
-		displayOptions: { show: { resource: ['table'], operation: ['getAll'] } },
-		description:
-			'The ID of the base whose tables you want to list. Find it in the URL as the segment after /base/.',
+		displayOptions: { show: { resource: ['table'] } },
+		description: 'The Teable space.',
+	},
+	{
+		displayName: 'Base',
+		name: 'baseId',
+		type: 'options',
+		typeOptions: { loadOptionsMethod: 'getBases', loadOptionsDependsOn: ['spaceId'] },
+		required: true,
+		default: '',
+		displayOptions: { show: { resource: ['table'] } },
+		description: 'The base within the selected space.',
 	},
 
-	// ── GET SCHEMA & GET VIEWS ────────────────────────────────
+	// ── Table (getSchema + getViews — getAll lists all tables in the base) ────
 	{
-		displayName: 'Table ID',
+		displayName: 'Table',
 		name: 'tableId',
-		type: 'string',
+		type: 'options',
+		typeOptions: { loadOptionsMethod: 'getTables', loadOptionsDependsOn: ['baseId'] },
 		required: true,
 		default: '',
-		displayOptions: {
-			show: { resource: ['table'], operation: ['getSchema', 'getViews'] },
-		},
-		description: 'The ID of the table (tblXXXXXXXX).',
+		displayOptions: { show: { resource: ['table'], operation: ['getSchema', 'getViews'] } },
+		description: 'The table to inspect.',
 	},
 ];

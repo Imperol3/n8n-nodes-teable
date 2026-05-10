@@ -102,15 +102,14 @@ export function parseJsonParameter(value: string | IDataObject): IDataObject {
  * Build a fields object from an n8n "fixedCollection" additionalFields value.
  */
 export function buildFieldsObject(
-	additionalFields: IDataObject,
-	fieldsKey = 'fieldsUi',
+	fieldsUi: IDataObject,
+	fieldsKey = 'fieldValues',
 ): IDataObject {
-	const ui = additionalFields[fieldsKey] as { fieldValues?: Array<{ fieldName: string; fieldValue: string }> };
-	if (!ui?.fieldValues?.length) return {};
+	const items = fieldsUi[fieldsKey] as Array<{ fieldName: string; fieldValue: string }> | undefined;
+	if (!items?.length) return {};
 
 	const fields: IDataObject = {};
-	for (const { fieldName, fieldValue } of ui.fieldValues) {
-		// Try to parse JSON values (e.g. arrays, booleans, numbers)
+	for (const { fieldName, fieldValue } of items) {
 		try {
 			fields[fieldName] = JSON.parse(fieldValue);
 		} catch {

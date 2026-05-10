@@ -8,18 +8,8 @@ export const spaceOperations: INodeProperties[] = [
 		noDataExpression: true,
 		displayOptions: { show: { resource: ['space'] } },
 		options: [
-			{
-				name: 'List Spaces',
-				value: 'listSpaces',
-				description: 'Return all spaces accessible to your API token',
-				action: 'List spaces',
-			},
-			{
-				name: 'List Bases',
-				value: 'listBases',
-				description: 'Return all bases within a space',
-				action: 'List bases in a space',
-			},
+			{ name: 'List Spaces', value: 'listSpaces', description: 'Return all spaces accessible to your API token', action: 'List spaces' },
+			{ name: 'List Bases', value: 'listBases', description: 'Return all bases within a space', action: 'List bases in a space' },
 		],
 		default: 'listSpaces',
 	},
@@ -27,13 +17,13 @@ export const spaceOperations: INodeProperties[] = [
 
 export const spaceFields: INodeProperties[] = [
 	{
-		displayName: 'Space ID',
+		displayName: 'Space',
 		name: 'spaceId',
-		type: 'string',
+		type: 'options',
+		typeOptions: { loadOptionsMethod: 'getSpaces' },
 		required: true,
 		default: '',
 		displayOptions: { show: { resource: ['space'], operation: ['listBases'] } },
-		description:
-			'The ID of the space whose bases you want to list. Use "List Spaces" to find Space IDs.',
+		description: 'The space whose bases you want to list.',
 	},
 ];

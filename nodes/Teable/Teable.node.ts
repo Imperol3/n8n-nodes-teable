@@ -109,11 +109,8 @@ export class Teable implements INodeType {
 
 			async getBases(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const spaceId = this.getCurrentNodeParameter('spaceId') as string;
-				const response = await teableApiRequest.call(
-					this,
-					'GET',
-					`/space/${spaceId}/base`,
-				);
+				if (!spaceId) return [];
+				const response = await teableApiRequest.call(this, 'GET', `/space/${spaceId}/base`);
 				const bases = (response as IDataObject)?.bases ?? response;
 				return (bases as IDataObject[]).map((b) => ({
 					name: b.name as string,
@@ -123,11 +120,8 @@ export class Teable implements INodeType {
 
 			async getTables(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const baseId = this.getCurrentNodeParameter('baseId') as string;
-				const response = await teableApiRequest.call(
-					this,
-					'GET',
-					`/base/${baseId}/table`,
-				);
+				if (!baseId) return [];
+				const response = await teableApiRequest.call(this, 'GET', `/base/${baseId}/table`);
 				const tables = (response as IDataObject)?.tables ?? response;
 				return (tables as IDataObject[]).map((t) => ({
 					name: t.name as string,
@@ -137,10 +131,21 @@ export class Teable implements INodeType {
 
 			async getTableFields(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const tableId = this.getCurrentNodeParameter('tableId') as string;
+				if (!tableId) return [];
 				const fields = await teableApiRequest.call(this, 'GET', `/table/${tableId}/field`);
 				return (fields as IDataObject[]).map((f) => ({
 					name: `${f.name} (${f.type})`,
 					value: f.id as string,
+				}));
+			},
+
+			async getViews(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const tableId = this.getCurrentNodeParameter('tableId') as string;
+				if (!tableId) return [];
+				const views = await teableApiRequest.call(this, 'GET', `/table/${tableId}/view`);
+				return (views as IDataObject[]).map((v) => ({
+					name: v.name as string,
+					value: v.id as string,
 				}));
 			},
 		},
@@ -166,17 +171,34 @@ export class Teable implements INodeType {
 					if (operation === 'getAll') {
 						const returnAll = this.getNodeParameter('returnAll', i) as boolean;
 						const opts = this.getNodeParameter('additionalOptions', i, {}) as IDataObject;
+						const filterConditions = this.getNodeParameter('filterConditions', i, { conditions: [] }) as IDataObject;
 
 						const qs: IDataObject = {};
 						if (opts.viewId) qs.viewId = opts.viewId;
 						if (opts.fieldKeyType) qs.fieldKeyType = opts.fieldKeyType;
 						if (opts.cellFormat) qs.cellFormat = opts.cellFormat;
-						if (opts.filter) qs.filter = JSON.stringify(parseJsonParameter(opts.filter as string));
 						if (opts.orderBy) qs.orderBy = JSON.stringify(parseJsonParameter(opts.orderBy as string));
 						if (opts.selectedFieldIds) {
 							qs['selectedFieldIds[]'] = (opts.selectedFieldIds as string)
 								.split(',')
 								.map((s) => s.trim());
+						}
+
+						// Build filter from visual conditions
+						const conditions = (filterConditions.conditions as IDataObject[]) ?? [];
+						if (conditions.length > 0) {
+							const filterSet = conditions.map((c) => {
+								const entry: IDataObject = { fieldId: c.fieldId, operator: c.operator };
+								if (c.operator !== 'isEmpty' && c.operator !== 'isNotEmpty') {
+									entry.value = c.value ?? null;
+								}
+								return entry;
+							});
+							qs.filter = JSON.stringify({ conjunction: 'and', filterSet });
+						}
+						// Raw JSON filter overrides visual conditions when both are set
+						if (opts.filter) {
+							qs.filter = JSON.stringify(parseJsonParameter(opts.filter as string));
 						}
 
 						let records: IDataObject[];
@@ -411,8 +433,8 @@ export class Teable implements INodeType {
 					else if (operation === 'search') {
 						const searchQuery = this.getNodeParameter('searchQuery', i) as string;
 						const searchFieldId = this.getNodeParameter('searchFieldId', i, '') as string;
-						const returnAll = this.getNodeParameter('returnAll', i) as boolean;
-						const limit = returnAll ? 1000 : (this.getNodeParameter('limit', i) as number);
+						const returnAll = this.getNodeParameter('returnAllSearch', i) as boolean;
+						const limit = returnAll ? 1000 : (this.getNodeParameter('limitSearch', i) as number);
 
 						const qs: IDataObject = {
 							search: searchQuery,
