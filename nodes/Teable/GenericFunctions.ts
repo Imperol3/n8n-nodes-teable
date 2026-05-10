@@ -9,6 +9,40 @@ import {
 	IRequestOptions,
 } from 'n8n-workflow';
 
+// Private/loopback CIDRs that must not be reachable via SSRF.
+const BLOCKED_HOSTNAMES = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|::1|0\.0\.0\.0)/i;
+
+/**
+ * Validate that a base URL is a safe, absolute HTTPS/HTTP URL pointing to a
+ * public host. Throws if the URL would allow SSRF against internal services.
+ */
+export function validateBaseUrl(raw: string): string {
+	let parsed: URL;
+	try {
+		parsed = new URL(raw);
+	} catch {
+		throw new Error(`Invalid Base URL: "${raw}". Must be a full URL (e.g. https://app.teable.io).`);
+	}
+	if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+		throw new Error(`Invalid Base URL protocol "${parsed.protocol}". Only https:// is allowed.`);
+	}
+	if (BLOCKED_HOSTNAMES.test(parsed.hostname)) {
+		throw new Error(`Base URL hostname "${parsed.hostname}" is not allowed. Must be a public host.`);
+	}
+	return parsed.origin; // strip any path, credentials, or fragments
+}
+
+/**
+ * Validate that an API path segment (tableId, recordId, etc.) contains only
+ * safe characters. Prevents path traversal via user-supplied IDs.
+ */
+export function validatePathSegment(value: string, label: string): string {
+	if (!/^[\w-]+$/.test(value)) {
+		throw new Error(`Invalid ${label}: "${value}". Must contain only letters, digits, underscores, or hyphens.`);
+	}
+	return value;
+}
+
 /**
  * Make an authenticated request to the Teable API.
  */
@@ -20,7 +54,7 @@ export async function teableApiRequest(
 	qs: IDataObject = {},
 ): Promise<any> {
 	const credentials = await this.getCredentials('teableApi');
-	const baseUrl = (credentials.baseUrl as string).replace(/\/$/, '');
+	const baseUrl = validateBaseUrl((credentials.baseUrl as string) ?? 'https://app.teable.io');
 	const apiToken = (credentials.apiToken as string).replace(/^Bearer\s+/i, '');
 
 	const options: IRequestOptions = {
@@ -100,7 +134,8 @@ export function parseJsonParameter(value: string | IDataObject): IDataObject {
 		try {
 			return JSON.parse(value) as IDataObject;
 		} catch {
-			throw new Error(`Invalid JSON: ${value}`);
+			// Do not echo the raw value — it may contain sensitive content.
+			throw new Error('Invalid JSON parameter: could not parse the provided string. Check for syntax errors.');
 		}
 	}
 	return value;

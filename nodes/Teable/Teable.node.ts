@@ -17,6 +17,8 @@ import {
 	teableApiRequestAllItems,
 	parseJsonParameter,
 	buildFieldsObject,
+	validateBaseUrl,
+	validatePathSegment,
 } from './GenericFunctions';
 
 import { recordOperations, recordFields } from './RecordDescription';
@@ -24,6 +26,11 @@ import { tableOperations, tableFields } from './TableDescription';
 import { spaceOperations, spaceFields } from './SpaceDescription';
 
 const BATCH_SIZE = 1000;
+const BATCH_DELAY_MS = 200;
+
+function sleep(ms: number): Promise<void> {
+	return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export class Teable implements INodeType {
 	description: INodeTypeDescription = {
@@ -73,26 +80,32 @@ export class Teable implements INodeType {
 				credential: ICredentialsDecrypted,
 			): Promise<INodeCredentialTestResult> {
 				const credentials = credential.data as IDataObject;
-				const baseUrl = (credentials.baseUrl as string).replace(/\/$/, '');
+				let baseUrl: string;
+				try {
+					baseUrl = validateBaseUrl((credentials.baseUrl as string) ?? 'https://app.teable.io');
+				} catch (e: any) {
+					return { status: 'Error', message: e.message };
+				}
 				const apiToken = (credentials.apiToken as string).replace(/^Bearer\s+/i, '');
 
 				try {
+					// GET /api/auth/user is @TokenAccess() — valid for any scoped token,
+					// returns 401 for invalid tokens, no 403 ambiguity.
 					await this.helpers.request({
 						method: 'GET',
-						url: `${baseUrl}/api/space`,
+						url: `${baseUrl}/api/auth/user`,
 						headers: { Authorization: `Bearer ${apiToken}` },
 						json: true,
 					});
 					return { status: 'OK', message: 'Connection successful' };
 				} catch (error: any) {
-					// 403 means the token is valid but scope-restricted — still authenticated
 					const statusCode = error.statusCode ?? error.response?.statusCode ?? error.response?.status;
-					if (statusCode === 403) {
-						return { status: 'OK', message: 'Connection successful' };
+					if (statusCode === 401) {
+						return { status: 'Error', message: 'Invalid API token. Check your token in Teable account settings.' };
 					}
 					return {
 						status: 'Error',
-						message: error.message ?? 'Could not connect. Check your API token and Base URL.',
+						message: error.message ?? 'Could not connect. Check your Base URL.',
 					};
 				}
 			},
@@ -180,7 +193,7 @@ export class Teable implements INodeType {
 			try {
 				// ────────────────── RECORD ──────────────────────────
 				if (resource === 'record') {
-					const tableId = this.getNodeParameter('tableId', i) as string;
+					const tableId = validatePathSegment(this.getNodeParameter('tableId', i) as string, 'Table ID');
 
 					// ── getAll ─────────────────────────────────────
 					if (operation === 'getAll') {
@@ -242,7 +255,7 @@ export class Teable implements INodeType {
 
 					// ── get ────────────────────────────────────────
 					else if (operation === 'get') {
-						const recordId = this.getNodeParameter('recordId', i) as string;
+						const recordId = validatePathSegment(this.getNodeParameter('recordId', i) as string, 'Record ID');
 						const opts = this.getNodeParameter('additionalOptions', i, {}) as IDataObject;
 						const qs: IDataObject = {};
 						if (opts.fieldKeyType) qs.fieldKeyType = opts.fieldKeyType;
@@ -290,6 +303,7 @@ export class Teable implements INodeType {
 
 						const allCreated: IDataObject[] = [];
 						for (let b = 0; b < records.length; b += BATCH_SIZE) {
+							if (b > 0) await sleep(BATCH_DELAY_MS);
 							const chunk = records.slice(b, b + BATCH_SIZE);
 							const body: IDataObject = { records: chunk };
 							if (additionalOptions.fieldKeyType) body.fieldKeyType = additionalOptions.fieldKeyType;
@@ -307,7 +321,7 @@ export class Teable implements INodeType {
 
 					// ── update ─────────────────────────────────────
 					else if (operation === 'update') {
-						const recordId = this.getNodeParameter('recordId', i) as string;
+						const recordId = validatePathSegment(this.getNodeParameter('recordId', i) as string, 'Record ID');
 						const additionalOptions = this.getNodeParameter('additionalOptions', i, {}) as IDataObject;
 						const fields = buildFieldsObject(
 							this.getNodeParameter('fieldsUi', i, {}) as IDataObject,
@@ -338,6 +352,7 @@ export class Teable implements INodeType {
 
 						const allUpdated: IDataObject[] = [];
 						for (let b = 0; b < records.length; b += BATCH_SIZE) {
+							if (b > 0) await sleep(BATCH_DELAY_MS);
 							const chunk = records.slice(b, b + BATCH_SIZE);
 							const body: IDataObject = { records: chunk };
 							if (additionalOptions.fieldKeyType) body.fieldKeyType = additionalOptions.fieldKeyType;
@@ -355,7 +370,7 @@ export class Teable implements INodeType {
 
 					// ── delete ─────────────────────────────────────
 					else if (operation === 'delete') {
-						const recordId = this.getNodeParameter('recordId', i) as string;
+						const recordId = validatePathSegment(this.getNodeParameter('recordId', i) as string, 'Record ID');
 						await teableApiRequest.call(
 							this,
 							'DELETE',
@@ -474,7 +489,7 @@ export class Teable implements INodeType {
 				else if (resource === 'table') {
 					// ── getAll ─────────────────────────────────────
 					if (operation === 'getAll') {
-						const baseId = this.getNodeParameter('baseId', i) as string;
+						const baseId = validatePathSegment(this.getNodeParameter('baseId', i) as string, 'Base ID');
 						const response = await teableApiRequest.call(
 							this,
 							'GET',
@@ -488,7 +503,7 @@ export class Teable implements INodeType {
 
 					// ── getSchema ──────────────────────────────────
 					else if (operation === 'getSchema') {
-						const tableId = this.getNodeParameter('tableId', i) as string;
+						const tableId = validatePathSegment(this.getNodeParameter('tableId', i) as string, 'Table ID');
 						const fields = await teableApiRequest.call(
 							this,
 							'GET',
@@ -501,7 +516,7 @@ export class Teable implements INodeType {
 
 					// ── getViews ───────────────────────────────────
 					else if (operation === 'getViews') {
-						const tableId = this.getNodeParameter('tableId', i) as string;
+						const tableId = validatePathSegment(this.getNodeParameter('tableId', i) as string, 'Table ID');
 						const views = await teableApiRequest.call(
 							this,
 							'GET',
@@ -526,7 +541,7 @@ export class Teable implements INodeType {
 
 					// ── listBases ──────────────────────────────────
 					else if (operation === 'listBases') {
-						const spaceId = this.getNodeParameter('spaceId', i) as string;
+						const spaceId = validatePathSegment(this.getNodeParameter('spaceId', i) as string, 'Space ID');
 						const response = await teableApiRequest.call(
 							this,
 							'GET',

@@ -131,6 +131,10 @@ export class TeableTrigger implements INodeType {
 		},
 	};
 
+	// Maximum number of record snapshots held in static data.
+	// Oldest entries are evicted when the cap is exceeded to prevent unbounded memory growth.
+	private static readonly RECORD_STATE_CAP = 5000;
+
 	async poll(this: IPollFunctions): Promise<INodeExecutionData[][] | null> {
 		const tableId = this.getNodeParameter('tableId') as string;
 		const event = this.getNodeParameter('event') as string;
@@ -140,8 +144,6 @@ export class TeableTrigger implements INodeType {
 		const now = new Date().toISOString();
 		const staticData = this.getWorkflowStaticData('node');
 		const lastPollTime = staticData.lastPollTime as string | undefined;
-		// recordState stores the last-seen field snapshot per record ID so we can
-		// include previous values alongside the current ones.
 		const recordState = (staticData.recordState ?? {}) as Record<string, IDataObject>;
 
 		// First activation: bookmark current time and emit nothing.
@@ -202,6 +204,15 @@ export class TeableTrigger implements INodeType {
 				} as IDataObject,
 			};
 		});
+
+		// Evict oldest entries if the state map exceeds the cap.
+		const keys = Object.keys(recordState);
+		if (keys.length > TeableTrigger.RECORD_STATE_CAP) {
+			const evictCount = keys.length - TeableTrigger.RECORD_STATE_CAP;
+			for (const key of keys.slice(0, evictCount)) {
+				delete recordState[key];
+			}
+		}
 
 		staticData.recordState = recordState;
 

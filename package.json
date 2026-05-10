@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-teable-io",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "n8n community node for Teable.io — full CRUD, dynamic dropdowns, bulk operations, and upsert for your Teable tables and CRM.",
   "keywords": [
     "n8n-community-node-package",
