@@ -140,11 +140,14 @@ export class TeableTrigger implements INodeType {
 		const now = new Date().toISOString();
 		const staticData = this.getWorkflowStaticData('node');
 		const lastPollTime = staticData.lastPollTime as string | undefined;
+		// recordState stores the last-seen field snapshot per record ID so we can
+		// include previous values alongside the current ones.
+		const recordState = (staticData.recordState ?? {}) as Record<string, IDataObject>;
 
 		// First activation: bookmark current time and emit nothing.
-		// This prevents flooding the workflow with all pre-existing records.
 		if (!lastPollTime) {
 			staticData.lastPollTime = now;
+			staticData.recordState = recordState;
 			return null;
 		}
 
@@ -152,11 +155,13 @@ export class TeableTrigger implements INodeType {
 		try {
 			records = await fetchNewRecords.call(this, { tableId, event, lastPollTime, limit });
 		} catch (error: any) {
-			const statusCode = error?.statusCode ?? error?.response?.statusCode;
-			// Always advance the timestamp so the trigger never gets stuck on the same window.
+			// NodeApiError stores the HTTP status in httpCode (string) rather than statusCode.
+			const httpCode = error?.httpCode ? Number(error.httpCode) : undefined;
+			const statusCode = error?.statusCode ?? error?.response?.statusCode ?? httpCode;
+			// Always advance timestamp — never get stuck retrying the same window.
 			staticData.lastPollTime = now;
 			if (statusCode && statusCode >= 500) {
-				// Transient server error (e.g. 504 timeout) — skip this cycle silently.
+				// Transient server error (504 timeout, etc.) — skip this cycle silently.
 				return null;
 			}
 			throw error;
@@ -165,11 +170,53 @@ export class TeableTrigger implements INodeType {
 		staticData.lastPollTime = now;
 
 		if (records.length === 0) return null;
-		return [records.map((r) => ({ json: r }))];
+
+		const output: INodeExecutionData[] = records.map((record) => {
+			const id = record.id as string;
+			const prevRecord = recordState[id] as IDataObject | undefined;
+
+			// Flatten fields onto top level for easy expression access.
+			const currentFields = flattenRecord(record);
+			const previousFields = prevRecord ? flattenRecord(prevRecord) : null;
+
+			// Update the snapshot for next poll.
+			recordState[id] = record;
+
+			return {
+				json: {
+					id,
+					event,
+					current: currentFields,
+					previous: previousFields,
+				} as IDataObject,
+			};
+		});
+
+		staticData.recordState = recordState;
+
+		return [output];
 	}
 }
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Flatten a Teable record into a single object:
+ * system fields (id, name, createdTime, lastModifiedTime, autoNumber) at the top,
+ * then all entries from the nested `fields` object.
+ * This lets users reference {{ $json.current.Vendor }} directly.
+ */
+function flattenRecord(record: IDataObject): IDataObject {
+	const fields = (record.fields as IDataObject) ?? {};
+	return {
+		id: record.id,
+		name: record.name,
+		autoNumber: record.autoNumber,
+		createdTime: record.createdTime,
+		lastModifiedTime: record.lastModifiedTime,
+		...fields,
+	};
+}
 
 async function fetchNewRecords(
 	this: IPollFunctions,
@@ -180,12 +227,10 @@ async function fetchNewRecords(
 		limit: number;
 	},
 ): Promise<IDataObject[]> {
-	// Map event type to the Teable system field we filter on
 	const createdField = 'createdTime';
 	const modifiedField = 'lastModifiedTime';
 
 	if (event === 'createdOrUpdated') {
-		// Fetch both created and updated, deduplicate by record ID
 		const [created, updated] = await Promise.all([
 			queryByTimeField.call(this, tableId, createdField, lastPollTime, limit),
 			queryByTimeField.call(this, tableId, modifiedField, lastPollTime, limit),
@@ -213,17 +258,34 @@ async function queryByTimeField(
 	since: string,
 	limit: number,
 ): Promise<IDataObject[]> {
-	// Fetch the most recent records and filter client-side.
-	// Server-side date filters on system fields (createdTime / lastModifiedTime)
-	// cause 504 timeouts on Teable, so we avoid them entirely.
-	const response = await teableApiRequest.call(
-		this,
-		'GET',
-		`/table/${tableId}/record`,
-		{},
-		{ take: limit },
-	);
-	const all = (response as IDataObject)?.records as IDataObject[] ?? [];
+	// Try fetching records ordered by the time field descending so recently
+	// changed records surface first regardless of table size.
+	// If ordering on this system field causes a 504, fall back to unordered.
+	let all: IDataObject[];
+	try {
+		const response = await teableApiRequest.call(
+			this,
+			'GET',
+			`/table/${tableId}/record`,
+			{},
+			{
+				take: limit,
+				orderBy: JSON.stringify([{ fieldId, order: 'desc' }]),
+			},
+		);
+		all = (response as IDataObject)?.records as IDataObject[] ?? [];
+	} catch {
+		// Ordering on system fields can time out — retry without it.
+		const response = await teableApiRequest.call(
+			this,
+			'GET',
+			`/table/${tableId}/record`,
+			{},
+			{ take: limit },
+		);
+		all = (response as IDataObject)?.records as IDataObject[] ?? [];
+	}
+
 	return all.filter((r) => {
 		const ts = (r[fieldId] as string | undefined) ?? (r.createdTime as string | undefined);
 		return ts ? ts > since : false;
