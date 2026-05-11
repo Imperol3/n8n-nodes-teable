@@ -4,6 +4,14 @@ All notable changes to `n8n-nodes-teable-io` are documented here.
 
 ---
 
+## [0.3.7] — 2026-05-11
+
+### Changed
+
+- **npm provenance** — Publish workflow now uses `--provenance` and `registry-url` so every release is cryptographically attested to its GitHub Actions build. Required for n8n verified node submission.
+
+---
+
 ## [0.3.6] — 2026-05-11
 
 ### Changed
