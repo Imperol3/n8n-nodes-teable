@@ -471,7 +471,6 @@ export class Teable implements INodeType {
 						const searchQuery = this.getNodeParameter('searchQuery', i) as string;
 						const searchFieldId = this.getNodeParameter('searchFieldId', i, '') as string;
 						const returnAll = this.getNodeParameter('returnAllSearch', i) as boolean;
-						const limit = returnAll ? 1000 : (this.getNodeParameter('limitSearch', i) as number);
 
 						// Teable expects `search` as a JSON tuple: [value, fieldId|null, exactMatch]
 						const searchTuple: (string | boolean | null)[] = [
@@ -479,15 +478,30 @@ export class Teable implements INodeType {
 							searchFieldId || null,
 							false,
 						];
+						const qs: IDataObject = { search: JSON.stringify(searchTuple) };
 
-						const response = await teableApiRequest.call(
-							this,
-							'GET',
-							`/table/${tableId}/record`,
-							{},
-							{ search: JSON.stringify(searchTuple), take: limit },
-						);
-						const records = (response as IDataObject)?.records as IDataObject[] ?? [];
+						let records: IDataObject[];
+						if (returnAll) {
+							// teableApiRequestAllItems spreads qs on every page — the search
+							// tuple persists through all skip/take iterations automatically.
+							records = await teableApiRequestAllItems.call(
+								this,
+								'GET',
+								`/table/${tableId}/record`,
+								{},
+								qs,
+							);
+						} else {
+							const limit = this.getNodeParameter('limitSearch', i) as number;
+							const response = await teableApiRequest.call(
+								this,
+								'GET',
+								`/table/${tableId}/record`,
+								{},
+								{ ...qs, take: limit },
+							);
+							records = (response as IDataObject)?.records as IDataObject[] ?? [];
+						}
 						returnData.push(...records.map((r) => ({ json: r })));
 					}
 				}
