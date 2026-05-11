@@ -59,6 +59,10 @@
     "prettier": "^2.7.1",
     "typescript": "^5.9.3"
   },
+  "engines": {
+    "node": ">=18.10",
+    "n8n": ">=1.22.0"
+  },
   "peerDependencies": {
     "n8n-workflow": "*"
   }

@@ -120,6 +120,18 @@ Each trigger output includes:
 
 ---
 
+## Known Limitations
+
+| Limitation | Detail |
+|---|---|
+| **n8n version** | `usableAsTool` (AI Agent support) requires n8n ≥ 1.22.0. Workflow node works on any supported n8n version. |
+| **Large table sorting** | Ordering by `createdTime` or `lastModifiedTime` on very large tables can cause 504 timeouts. The trigger falls back to unordered fetching automatically. The main node does not — avoid sorting by system fields on tables with millions of rows. |
+| **Trigger poll volume** | The trigger fetches up to the configured limit per poll cycle. If your table receives bursts larger than that limit between polls, some records may be missed. Raise the limit or shorten the poll interval to compensate. |
+| **Static crawl only** | JS-rendered pages are not relevant here, but the Teable API is REST-only — there is no real-time webhook trigger yet. Polling introduces latency equal to your poll interval. |
+| **Return All cap** | All `Return All` operations are hard-capped at 100,000 records to prevent out-of-memory crashes in n8n. |
+
+---
+
 ## Roadmap
 
 - **Webhook trigger** — real-time record events via Teable webhooks (no polling)

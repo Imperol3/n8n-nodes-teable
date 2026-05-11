@@ -4,6 +4,43 @@ All notable changes to `n8n-nodes-teable-io` are documented here.
 
 ---
 
+## [0.3.4] — 2026-05-11
+
+### Fixed
+
+- **Search pagination** — `Return All` on the Search operation now paginates through all matching records using `skip`/`take` (same helper as Get All). Previously capped silently at 1,000 results.
+
+---
+
+## [0.3.3] — 2026-05-11
+
+### Fixed
+
+- **Triple node display** — Removed the standalone `TeableTool` node which caused n8n to show three entries (Teable, Teable Tool, Teable Tool Tool). AI Agent support is now provided by `usableAsTool: true` on the main Teable node — n8n auto-generates exactly one tool entry.
+
+---
+
+## [0.3.2] — 2026-05-11
+
+### Added
+
+- **AI Agent tool support** — Teable node is now usable as a tool in n8n's AI Agent node (`usableAsTool: true`). All operations available in workflow mode are available to the agent.
+
+### Fixed
+
+- **Search tuple format** — Search query is now sent as a JSON tuple `[value, fieldId|null, false]`. Teable rejected plain strings.
+- **Upsert filter operator** — Changed from `=` to `is` to match Teable API validation.
+
+---
+
+## [0.3.1] — 2026-05-11
+
+### Fixed
+
+- **npm install failure** — Added `index.js` stub to satisfy the `"main"` field in `package.json`. Without it, npm install failed with a module-not-found error.
+
+---
+
 ## [0.2.6] — 2026-05-10
 
 ### Security
