@@ -1,7 +1,7 @@
 {
   "name": "n8n-nodes-teable-io",
-  "version": "0.3.7",
-  "description": "n8n community node for Teable.io — full CRUD, dynamic dropdowns, bulk operations, and upsert for your Teable tables and CRM.",
+  "version": "0.3.8",
+  "description": "n8n community node for Teable — full CRUD, dynamic dropdowns, bulk operations, and upsert for your Teable tables and CRM.",
   "keywords": [
     "n8n-community-node-package",
     "teable",
@@ -13,17 +13,17 @@
     "postgres"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/imperol3/n8n-nodes-teable#readme",
+  "homepage": "https://github.com/Imperol3/n8n-nodes-teable#readme",
   "author": {
     "name": "Kimotho",
     "email": "phoenixconsultants46@gmail.com"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/imperol3/n8n-nodes-teable.git"
+    "url": "git+https://github.com/Imperol3/n8n-nodes-teable.git"
   },
   "bugs": {
-    "url": "https://github.com/imperol3/n8n-nodes-teable/issues"
+    "url": "https://github.com/Imperol3/n8n-nodes-teable/issues"
   },
   "main": "index.js",
   "scripts": {

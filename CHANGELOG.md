@@ -4,6 +4,15 @@ All notable changes to `n8n-nodes-teable-io` are documented here.
 
 ---
 
+## [0.3.8] — 2026-05-11
+
+### Fixed
+
+- **Provenance case mismatch** — `repository.url`, `homepage`, and `bugs.url` in `package.json` now use the correct capitalisation (`Imperol3`) to match the GitHub repo. npm's sigstore provenance verification requires an exact case-sensitive match.
+- **Description** — Removed stale `Teable.io` reference from package description.
+
+---
+
 ## [0.3.7] — 2026-05-11
 
 ### Changed
