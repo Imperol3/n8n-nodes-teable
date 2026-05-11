@@ -43,8 +43,19 @@ export function validatePathSegment(value: string, label: string): string {
 	return value;
 }
 
+/** Extract a numeric HTTP status from whatever shape the error arrives in. */
+function extractStatus(error: any): number | undefined {
+	const raw = error?.statusCode ?? error?.response?.statusCode ?? error?.response?.status;
+	if (raw !== undefined) return Number(raw);
+	// NodeApiError stores status in httpCode as a string
+	if (error?.httpCode !== undefined) return Number(error.httpCode);
+	return undefined;
+}
+
 /**
  * Make an authenticated request to the Teable API.
+ * Retries up to 3 times on 429 (rate limit) and 5xx (server error)
+ * with exponential backoff (1 s → 2 s → 4 s). Respects Retry-After on 429.
  */
 export async function teableApiRequest(
 	this: IExecuteFunctions | ILoadOptionsFunctions | IHookFunctions | IPollFunctions,
@@ -75,18 +86,41 @@ export async function teableApiRequest(
 		delete options.body;
 	}
 
-	try {
-		return await this.helpers.request(options);
-	} catch (error: any) {
-		const status = error?.statusCode ?? error?.response?.statusCode ?? '';
-		const body = error?.response?.body;
-		const bodyMsg =
-			typeof body === 'string'
-				? body.slice(0, 300)
-				: body?.message ?? (body ? JSON.stringify(body).slice(0, 300) : '');
-		const message = bodyMsg || error?.message || `Request failed${status ? ` (HTTP ${status})` : ''}`;
-		throw new NodeApiError(this.getNode(), error as any, { message: String(message) });
+	const MAX_ATTEMPTS = 3;
+	let lastError: any;
+
+	for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+		try {
+			return await this.helpers.request(options);
+		} catch (error: any) {
+			lastError = error;
+			const status = extractStatus(error);
+			const retryable = status !== undefined && (status === 429 || status >= 500);
+
+			if (!retryable || attempt === MAX_ATTEMPTS) break;
+
+			// Respect Retry-After header on 429; otherwise exponential backoff
+			let delayMs = Math.pow(2, attempt - 1) * 1000; // 1 s, 2 s, 4 s
+			if (status === 429) {
+				const retryAfter = error?.response?.headers?.['retry-after'];
+				if (retryAfter) {
+					const parsed = Number(retryAfter);
+					if (!isNaN(parsed)) delayMs = parsed * 1000;
+				}
+			}
+			await new Promise((resolve) => setTimeout(resolve, delayMs));
+		}
 	}
+
+	// All attempts exhausted — surface a clean error
+	const status = extractStatus(lastError) ?? '';
+	const rawBody = lastError?.response?.body;
+	const bodyMsg =
+		typeof rawBody === 'string'
+			? rawBody.slice(0, 300)
+			: rawBody?.message ?? (rawBody ? JSON.stringify(rawBody).slice(0, 300) : '');
+	const message = bodyMsg || lastError?.message || `Request failed${status ? ` (HTTP ${status})` : ''}`;
+	throw new NodeApiError(this.getNode(), lastError as any, { message: String(message) });
 }
 
 // Hard cap on Return All to prevent OOM on very large tables.

@@ -4,6 +4,15 @@ All notable changes to `n8n-nodes-teable-io` are documented here.
 
 ---
 
+## [0.3.5] — 2026-05-11
+
+### Fixed
+
+- **Retry on 429 / 5xx** — All API requests now retry up to 3 times with exponential backoff (1 s → 2 s → 4 s) on rate-limit and server errors. Respects `Retry-After` header on 429 responses.
+- **`engines` field** — `package.json` now declares `n8n >= 1.22.0` and `node >= 18.10` so incompatible installs surface a warning instead of failing silently.
+
+---
+
 ## [0.3.4] — 2026-05-11
 
 ### Fixed
