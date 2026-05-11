@@ -83,7 +83,7 @@ export class Teable implements INodeType {
 				const credentials = credential.data as IDataObject;
 				let baseUrl: string;
 				try {
-					baseUrl = validateBaseUrl((credentials.baseUrl as string) ?? 'https://app.teable.io');
+					baseUrl = validateBaseUrl((credentials.baseUrl as string) ?? 'https://app.teable.ai');
 				} catch (e: any) {
 					return { status: 'Error', message: e.message };
 				}

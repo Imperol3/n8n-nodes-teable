@@ -4,6 +4,14 @@ All notable changes to `n8n-nodes-teable-io` are documented here.
 
 ---
 
+## [0.3.6] — 2026-05-11
+
+### Changed
+
+- **Domain updated to teable.ai** — All references to the old `teable.io` domain have been updated to `teable.ai` across credentials, code, and documentation. Default Cloud URL is now `https://app.teable.ai`. API docs link updated to `https://help.teable.ai/en/api-doc/overview`.
+
+---
+
 ## [0.3.5] — 2026-05-11
 
 ### Fixed

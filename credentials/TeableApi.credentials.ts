@@ -7,7 +7,7 @@ import {
 export class TeableApi implements ICredentialType {
 	name = 'teableApi';
 	displayName = 'Teable API';
-	documentationUrl = 'https://help.teable.io/api-reference';
+	documentationUrl = 'https://help.teable.ai/en/api-doc/overview';
 
 	properties: INodeProperties[] = [
 		{
@@ -25,7 +25,7 @@ export class TeableApi implements ICredentialType {
 			displayName: 'Base URL',
 			name: 'baseUrl',
 			type: 'string',
-			default: 'https://app.teable.io',
+			default: 'https://app.teable.ai',
 			description:
 				'Leave as default for Teable Cloud. Override with your instance URL for self-hosted Teable (e.g. https://teable.mycompany.com).',
 		},

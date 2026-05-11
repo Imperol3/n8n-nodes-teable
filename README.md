@@ -1,6 +1,6 @@
 # n8n-nodes-teable
 
-An [n8n](https://n8n.io/) community node for [Teable.io](https://teable.io) — the fast, real-time, no-code database built on Postgres.
+An [n8n](https://n8n.io/) community node for [Teable](https://teable.ai) — the fast, real-time, no-code database built on Postgres.
 
 Replace clunky HTTP nodes with a proper Teable integration: dynamic dropdowns, full CRUD, bulk operations, upsert, and auto-pagination — all in one node.
 
@@ -32,7 +32,7 @@ Create a **Teable API** credential with:
 | Field | Description |
 |---|---|
 | **API Token** | Your personal access token from Teable account settings |
-| **Base URL** | `https://app.teable.io` (default) or your self-hosted URL |
+| **Base URL** | `https://app.teable.ai` (default) or your self-hosted URL |
 
 After saving, click **Test** — n8n verifies the token works regardless of which permission scope it was issued with (space, base, table, or record level).
 

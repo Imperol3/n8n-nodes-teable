@@ -21,7 +21,7 @@ export function validateBaseUrl(raw: string): string {
 	try {
 		parsed = new URL(raw);
 	} catch {
-		throw new Error('Invalid Base URL. Must be a full URL (e.g. https://app.teable.io).');
+		throw new Error('Invalid Base URL. Must be a full URL (e.g. https://app.teable.ai).');
 	}
 	if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
 		throw new Error(`Invalid Base URL protocol "${parsed.protocol}". Only https:// is allowed.`);
@@ -65,7 +65,7 @@ export async function teableApiRequest(
 	qs: IDataObject = {},
 ): Promise<any> {
 	const credentials = await this.getCredentials('teableApi');
-	const baseUrl = validateBaseUrl((credentials.baseUrl as string) ?? 'https://app.teable.io');
+	const baseUrl = validateBaseUrl((credentials.baseUrl as string) ?? 'https://app.teable.ai');
 	const apiToken = (credentials.apiToken as string).replace(/^Bearer\s+/i, '');
 
 	const options: IRequestOptions = {
