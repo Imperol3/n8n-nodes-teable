@@ -4,6 +4,18 @@ All notable changes to `n8n-nodes-teable-io` are documented here.
 
 ---
 
+## [0.4.0] — 2026-05-12
+
+### Fixed
+
+- **n8n scan compliance (round 2)** — Resolved remaining ESLint violations:
+  - `node:timers/promises` import removed — banned on n8n Cloud. Retry logic now retries immediately without delay (timers are unavailable in the sandbox).
+  - `helpers.httpRequest` with manual auth replaced by `helpers.httpRequestWithAuthentication` — n8n now owns token injection via the credential's `authenticate` definition, enabling future token refresh and audit logging.
+  - Batch delays (`BATCH_DELAY_MS`) removed from `createMany` / `updateMany` for the same reason.
+- **`IAllExecuteFunctions`** used as the function context type for `teableApiRequest` and `teableApiRequestAllItems` to satisfy the `httpRequestWithAuthentication` type constraint.
+
+---
+
 ## [0.3.9] — 2026-05-12
 
 ### Fixed

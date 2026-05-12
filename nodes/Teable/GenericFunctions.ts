@@ -1,8 +1,6 @@
-import { setTimeout as timerSetTimeout } from 'node:timers/promises';
-
 import {
+	IAllExecuteFunctions,
 	IExecuteFunctions,
-	IHookFunctions,
 	ILoadOptionsFunctions,
 	IPollFunctions,
 	IDataObject,
@@ -56,11 +54,13 @@ function extractStatus(error: any): number | undefined {
 
 /**
  * Make an authenticated request to the Teable API.
- * Retries up to 3 times on 429 (rate limit) and 5xx (server error)
- * with exponential backoff (1 s → 2 s → 4 s). Respects Retry-After on 429.
+ * Authentication is handled by n8n via the credential's authenticate definition.
+ * Retries up to 3 times on 429 (rate limit) and 5xx (server error).
+ * Note: no delay between retries — setTimeout and timers/promises are both
+ * blocked in n8n Cloud's sandbox environment.
  */
 export async function teableApiRequest(
-	this: IExecuteFunctions | ILoadOptionsFunctions | IHookFunctions | IPollFunctions,
+	this: IAllExecuteFunctions,
 	method: IHttpRequestMethods,
 	endpoint: string,
 	body: IDataObject = {},
@@ -68,13 +68,11 @@ export async function teableApiRequest(
 ): Promise<any> {
 	const credentials = await this.getCredentials('teableApi');
 	const baseUrl = validateBaseUrl((credentials.baseUrl as string) ?? 'https://app.teable.ai');
-	const apiToken = (credentials.apiToken as string).replace(/^Bearer\s+/i, '');
 
 	const options: IHttpRequestOptions = {
 		method,
 		url: `${baseUrl}/api${endpoint}`,
 		headers: {
-			Authorization: `Bearer ${apiToken}`,
 			'Content-Type': 'application/json',
 			Accept: 'application/json',
 		},
@@ -93,24 +91,16 @@ export async function teableApiRequest(
 
 	for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
 		try {
-			return await this.helpers.httpRequest(options);
+			// httpRequestWithAuthentication applies the Bearer token from credentials
+			// automatically via the credential's authenticate definition.
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			return await (this.helpers as any).httpRequestWithAuthentication('teableApi', options);
 		} catch (error: any) {
 			lastError = error;
 			const status = extractStatus(error);
 			const retryable = status !== undefined && (status === 429 || status >= 500);
-
 			if (!retryable || attempt === MAX_ATTEMPTS) break;
-
-			// Respect Retry-After header on 429; otherwise exponential backoff
-			let delayMs = Math.pow(2, attempt - 1) * 1000; // 1 s, 2 s, 4 s
-			if (status === 429) {
-				const retryAfter = error?.response?.headers?.['retry-after'];
-				if (retryAfter) {
-					const parsed = Number(retryAfter);
-					if (!isNaN(parsed)) delayMs = parsed * 1000;
-				}
-			}
-			await timerSetTimeout(delayMs);
+			// No delay between retries — timers are not available in n8n Cloud sandbox
 		}
 	}
 
@@ -133,7 +123,7 @@ const MAX_RECORDS_RETURN_ALL = 100_000;
  * Teable's max per page is 1000. Capped at MAX_RECORDS_RETURN_ALL.
  */
 export async function teableApiRequestAllItems(
-	this: IExecuteFunctions | ILoadOptionsFunctions | IPollFunctions,
+	this: IAllExecuteFunctions,
 	method: IHttpRequestMethods,
 	endpoint: string,
 	body: IDataObject = {},

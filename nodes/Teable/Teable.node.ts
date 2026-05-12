@@ -1,5 +1,3 @@
-import { setTimeout as sleep } from 'node:timers/promises';
-
 import {
 	IExecuteFunctions,
 	IDataObject,
@@ -25,7 +23,6 @@ import { tableOperations, tableFields } from './TableDescription';
 import { spaceOperations, spaceFields } from './SpaceDescription';
 
 const BATCH_SIZE = 1000;
-const BATCH_DELAY_MS = 200;
 
 export class Teable implements INodeType {
 	description: INodeTypeDescription = {
@@ -265,7 +262,7 @@ export class Teable implements INodeType {
 
 						const allCreated: IDataObject[] = [];
 						for (let b = 0; b < records.length; b += BATCH_SIZE) {
-							if (b > 0) await sleep(BATCH_DELAY_MS);
+	
 							const chunk = records.slice(b, b + BATCH_SIZE);
 							const body: IDataObject = { records: chunk };
 							if (additionalOptions.fieldKeyType) body.fieldKeyType = additionalOptions.fieldKeyType;
@@ -317,7 +314,7 @@ export class Teable implements INodeType {
 
 						const allUpdated: IDataObject[] = [];
 						for (let b = 0; b < records.length; b += BATCH_SIZE) {
-							if (b > 0) await sleep(BATCH_DELAY_MS);
+	
 							const chunk = records.slice(b, b + BATCH_SIZE);
 							const body: IDataObject = { records: chunk };
 							if (additionalOptions.fieldKeyType) body.fieldKeyType = additionalOptions.fieldKeyType;
