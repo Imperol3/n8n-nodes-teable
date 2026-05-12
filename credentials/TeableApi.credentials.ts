@@ -1,5 +1,6 @@
 import {
 	IAuthenticateGeneric,
+	ICredentialTestRequest,
 	ICredentialType,
 	INodeProperties,
 } from 'n8n-workflow';
@@ -37,6 +38,13 @@ export class TeableApi implements ICredentialType {
 			headers: {
 				Authorization: '=Bearer {{$credentials.apiToken}}',
 			},
+		},
+	};
+
+	test: ICredentialTestRequest = {
+		request: {
+			baseURL: '={{$credentials.baseUrl}}',
+			url: '/api/auth/user',
 		},
 	};
 }

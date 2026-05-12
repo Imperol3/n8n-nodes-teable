@@ -4,6 +4,18 @@ All notable changes to `n8n-nodes-teable-io` are documented here.
 
 ---
 
+## [0.3.9] — 2026-05-12
+
+### Fixed
+
+- **n8n scan compliance** — Resolved all 4 ESLint violations flagged by `@n8n/scan-community-package`:
+  - `helpers.request` (deprecated) replaced with `helpers.httpRequest` in `GenericFunctions.ts`
+  - `setTimeout` (restricted global) replaced with explicit `node:timers/promises` import in both `GenericFunctions.ts` and `Teable.node.ts`
+  - Credential test moved from custom node function to declarative `ICredentialTestRequest` in `TeableApi.credentials.ts` — eliminates the last `helpers.request` usage
+- **`@types/node`** added as devDependency to support `node:timers/promises` type resolution
+
+---
+
 ## [0.3.8] — 2026-05-11
 
 ### Fixed

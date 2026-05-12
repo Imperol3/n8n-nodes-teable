@@ -1,3 +1,5 @@
+import { setTimeout as timerSetTimeout } from 'node:timers/promises';
+
 import {
 	IExecuteFunctions,
 	IHookFunctions,
@@ -6,7 +8,7 @@ import {
 	IDataObject,
 	NodeApiError,
 	IHttpRequestMethods,
-	IRequestOptions,
+	IHttpRequestOptions,
 } from 'n8n-workflow';
 
 // Private/loopback CIDRs that must not be reachable via SSRF.
@@ -68,9 +70,9 @@ export async function teableApiRequest(
 	const baseUrl = validateBaseUrl((credentials.baseUrl as string) ?? 'https://app.teable.ai');
 	const apiToken = (credentials.apiToken as string).replace(/^Bearer\s+/i, '');
 
-	const options: IRequestOptions = {
+	const options: IHttpRequestOptions = {
 		method,
-		uri: `${baseUrl}/api${endpoint}`,
+		url: `${baseUrl}/api${endpoint}`,
 		headers: {
 			Authorization: `Bearer ${apiToken}`,
 			'Content-Type': 'application/json',
@@ -91,7 +93,7 @@ export async function teableApiRequest(
 
 	for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
 		try {
-			return await this.helpers.request(options);
+			return await this.helpers.httpRequest(options);
 		} catch (error: any) {
 			lastError = error;
 			const status = extractStatus(error);
@@ -108,13 +110,13 @@ export async function teableApiRequest(
 					if (!isNaN(parsed)) delayMs = parsed * 1000;
 				}
 			}
-			await new Promise((resolve) => setTimeout(resolve, delayMs));
+			await timerSetTimeout(delayMs);
 		}
 	}
 
 	// All attempts exhausted — surface a clean error
 	const status = extractStatus(lastError) ?? '';
-	const rawBody = lastError?.response?.body;
+	const rawBody = lastError?.response?.body ?? lastError?.response?.data;
 	const bodyMsg =
 		typeof rawBody === 'string'
 			? rawBody.slice(0, 300)

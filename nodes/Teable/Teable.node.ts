@@ -1,14 +1,13 @@
+import { setTimeout as sleep } from 'node:timers/promises';
+
 import {
 	IExecuteFunctions,
 	IDataObject,
 	ILoadOptionsFunctions,
-	INodeCredentialTestResult,
 	INodeExecutionData,
 	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
-	ICredentialTestFunctions,
-	ICredentialsDecrypted,
 	NodeOperationError,
 } from 'n8n-workflow';
 
@@ -28,10 +27,6 @@ import { spaceOperations, spaceFields } from './SpaceDescription';
 const BATCH_SIZE = 1000;
 const BATCH_DELAY_MS = 200;
 
-function sleep(ms: number): Promise<void> {
-	return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 export class Teable implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Teable',
@@ -40,12 +35,12 @@ export class Teable implements INodeType {
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
-		description: 'Read and write records, tables, and spaces in Teable.io',
+		description: 'Read and write records, tables, and spaces in Teable',
 		defaults: { name: 'Teable' },
 		usableAsTool: true,
 		inputs: ['main'],
 		outputs: ['main'],
-		credentials: [{ name: 'teableApi', required: true, testedBy: 'teableApiCredentialTest' }],
+		credentials: [{ name: 'teableApi', required: true }],
 		properties: [
 			// ── Resource selector ─────────────────────────────────
 			{
@@ -75,43 +70,6 @@ export class Teable implements INodeType {
 	// loadOptions — power Space → Base → Table dropdowns elsewhere
 	// ─────────────────────────────────────────────────────────────
 	methods = {
-		credentialTest: {
-			async teableApiCredentialTest(
-				this: ICredentialTestFunctions,
-				credential: ICredentialsDecrypted,
-			): Promise<INodeCredentialTestResult> {
-				const credentials = credential.data as IDataObject;
-				let baseUrl: string;
-				try {
-					baseUrl = validateBaseUrl((credentials.baseUrl as string) ?? 'https://app.teable.ai');
-				} catch (e: any) {
-					return { status: 'Error', message: e.message };
-				}
-				const apiToken = (credentials.apiToken as string).replace(/^Bearer\s+/i, '');
-
-				try {
-					// GET /api/auth/user is @TokenAccess() — valid for any scoped token,
-					// returns 401 for invalid tokens, no 403 ambiguity.
-					await this.helpers.request({
-						method: 'GET',
-						url: `${baseUrl}/api/auth/user`,
-						headers: { Authorization: `Bearer ${apiToken}` },
-						json: true,
-					});
-					return { status: 'OK', message: 'Connection successful' };
-				} catch (error: any) {
-					const statusCode = error.statusCode ?? error.response?.statusCode ?? error.response?.status;
-					if (statusCode === 401) {
-						return { status: 'Error', message: 'Invalid API token. Check your token in Teable account settings.' };
-					}
-					return {
-						status: 'Error',
-						message: error.message ?? 'Could not connect. Check your Base URL.',
-					};
-				}
-			},
-		},
-
 		loadOptions: {
 			async getSpaces(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const response = await teableApiRequest.call(this, 'GET', '/space');
