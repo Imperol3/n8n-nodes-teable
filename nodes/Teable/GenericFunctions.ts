@@ -91,10 +91,10 @@ export async function teableApiRequest(
 
 	for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
 		try {
-			// httpRequestWithAuthentication applies the Bearer token from credentials
-			// automatically via the credential's authenticate definition.
+			// .call(this, ...) passes the execution context so httpRequestWithAuthentication
+			// can resolve this.getNode() / this.getCredentials() internally.
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			return await (this.helpers as any).httpRequestWithAuthentication('teableApi', options);
+			return await (this.helpers as any).httpRequestWithAuthentication.call(this, 'teableApi', options);
 		} catch (error: any) {
 			lastError = error;
 			const status = extractStatus(error);

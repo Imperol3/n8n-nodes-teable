@@ -4,6 +4,14 @@ All notable changes to `n8n-nodes-teable-io` are documented here.
 
 ---
 
+## [0.4.1] — 2026-05-14
+
+### Fixed
+
+- **`this.getNode is not a function`** — `httpRequestWithAuthentication` requires the n8n execution context as its `this`. Calling it as `this.helpers.httpRequestWithAuthentication(...)` set `this` inside the method to the helpers object (which has no `getNode`). Fixed by using `.call(this, ...)` to pass the execution context explicitly.
+
+---
+
 ## [0.4.0] — 2026-05-12
 
 ### Fixed
